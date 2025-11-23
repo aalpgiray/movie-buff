@@ -2,6 +2,8 @@ const RAPID_API_KEY = process.env.STREAMING_AVAILABILITY_API_KEY;
 const BASE_URL = "https://streaming-availability.p.rapidapi.com";
 
 export async function getStreamingAvailability(imdbId: string) {
+	"use cache";
+
 	if (!RAPID_API_KEY) {
 		console.warn("STREAMING_AVAILABILITY_API_KEY is not set.");
 		return null;
@@ -16,9 +18,8 @@ export async function getStreamingAvailability(imdbId: string) {
 	};
 
 	try {
-		// V4 Endpoint: /shows/{id}
-		const url = `${BASE_URL}/shows/${imdbId}?country=us&output_language=en`;
-		console.log("Streaming API Request:", url);
+		// V4 Endpoint: /shows/{id} - Omitting country returns global availability
+		const url = `${BASE_URL}/shows/${imdbId}?output_language=en`;
 
 		const response = await fetch(url, options);
 
@@ -29,10 +30,6 @@ export async function getStreamingAvailability(imdbId: string) {
 		}
 
 		const data = await response.json();
-		console.log(
-			"Streaming API Response:",
-			JSON.stringify(data).substring(0, 200) + "...",
-		);
 		return data;
 	} catch (error) {
 		console.error("Error fetching streaming data:", error);
