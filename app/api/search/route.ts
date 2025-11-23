@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { searchMovies } from "@/lib/omdb";
-import { getSearchQueriesFromMood } from "@/lib/openai";
+import { getSearchQueriesFromMood, detectMovieName } from "@/lib/openai";
 
 export async function POST(req: Request) {
 	try {
@@ -9,13 +9,39 @@ export async function POST(req: Request) {
 			return NextResponse.json({ error: "Query is required" }, { status: 400 });
 		}
 
-		// 1. Get movie recommendations from AI
 		console.log("Processing query:", query);
 		console.log("Seen context:", seenMovies?.length || 0, "movies");
 
+		// Extract titles from seenMovies (handle both string and object formats)
+		const seenTitles = seenMovies?.map((movie: any) => 
+			typeof movie === 'string' ? movie : movie.title || movie
+		) || [];
+
+		// Check if this is a direct movie name search
+		const detectedMovieName = await detectMovieName(query);
+		console.log("Detected movie name:", detectedMovieName);
+
+		let directMovie = null;
+		if (detectedMovieName) {
+			// Search for the specific movie
+			try {
+				const movieData = await searchMovies(detectedMovieName);
+				if (movieData.Search && movieData.Search.length > 0) {
+					directMovie = {
+						...movieData.Search[0],
+						reason: "Direct search result",
+					};
+					console.log("Found direct movie:", directMovie.Title);
+				}
+			} catch (error) {
+				console.error("Error searching for direct movie:", error);
+			}
+		}
+
+		// Get mood-based recommendations
 		const movieRecommendations = await getSearchQueriesFromMood(
 			query,
-			seenMovies,
+			seenTitles,
 		);
 		console.log(
 			"AI Recommended Titles:",
@@ -24,59 +50,54 @@ export async function POST(req: Request) {
 
 		if (!Array.isArray(movieRecommendations)) {
 			console.error("Expected array from AI but got:", movieRecommendations);
-			return NextResponse.json({ terms: [], movies: [] });
+			return NextResponse.json({ terms: [], movies: directMovie ? [directMovie] : [] });
 		}
 
-		// 2. Search OMDb for each title
-		// We process all recommendations to ensure we have enough after filtering
+		// Search OMDb for each recommendation
 		const moviePromises = movieRecommendations.map(async (rec: any) => {
 			const title = rec.title;
 			try {
 				console.log("Searching OMDb for title:", title);
-				// OMDb search by 's' returns a list, we want the best match
 				const data = await searchMovies(title);
 
 				if (data.Search && data.Search.length > 0) {
-					// Find exact match or first result
 					const exactMatch = data.Search.find(
 						(m: any) => m.Title.toLowerCase() === title.toLowerCase(),
 					);
 					const movie = exactMatch || data.Search[0];
-					// Attach the AI reasoning to the movie object
 					return { ...movie, reason: rec.reason };
 				}
 				return null;
-			} catch (e) {
-				console.error("Error searching for title:", title, e);
+			} catch (error) {
+				console.error(`Error searching for title: ${title}`, error);
 				return null;
 			}
 		});
 
-		const results = await Promise.all(moviePromises);
+		const searchResults = await Promise.all(moviePromises);
+		let allMovies = searchResults.filter((m) => m !== null);
 
-		// 3. Filter valid results and deduplicate
-		const validMovies = results.filter((m) => m !== null);
-		const uniqueMovies = Array.from(
-			new Map(validMovies.map((m: any) => [m.imdbID, m])).values(),
+		// Filter out movies already seen
+		allMovies = allMovies.filter(
+			(movie: any) => !seenMoviesIds?.includes(movie.imdbID),
 		);
 
-		// 4. Filter out seen movies by ID
-		const seenIdsSet = new Set(seenMoviesIds || []);
-		const filteredMovies = uniqueMovies.filter(
-			(m: any) => !seenIdsSet.has(m.imdbID),
-		);
-
-		// 5. Return top 5
-		const finalMovies = filteredMovies.slice(0, 5);
+		// If we have a direct movie match, put it first (unless already seen)
+		if (directMovie && !seenMoviesIds?.includes(directMovie.imdbID)) {
+			// Remove from allMovies if it exists there
+			allMovies = allMovies.filter((m: any) => m.imdbID !== directMovie.imdbID);
+			// Add at the beginning
+			allMovies.unshift(directMovie);
+		}
 
 		return NextResponse.json({
 			terms: movieRecommendations.map((r: any) => r.title),
-			movies: finalMovies,
+			movies: allMovies,
 		});
 	} catch (error) {
-		console.error("Search API Error:", error);
+		console.error("Search error:", error);
 		return NextResponse.json(
-			{ error: "Internal Server Error" },
+			{ error: "Failed to process search" },
 			{ status: 500 },
 		);
 	}

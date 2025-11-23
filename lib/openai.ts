@@ -73,3 +73,54 @@ export async function getSearchQueriesFromMood(
 		return [{ title: mood, reason: "Fallback search" }];
 	}
 }
+
+// New function to detect if input is a movie name
+export async function detectMovieName(input: string): Promise<string | null> {
+	if (!process.env.OPENAI_API_KEY) {
+		return null;
+	}
+
+	try {
+		const response = await openai.chat.completions.create({
+			model: "gpt-4o",
+			messages: [
+				{
+					role: "system",
+					content: `You are a movie title detector. Determine if the user input is a movie title or movie-related search.
+          
+          If it IS a movie title:
+          - Return JSON: {"isMovie": true, "correctedTitle": "The Corrected Movie Title"}
+          - Correct any typos (e.g., "interstelar" -> "Interstellar", "god father" -> "The Godfather")
+          
+          If it is NOT a movie title (it's a mood/feeling/description):
+          - Return JSON: {"isMovie": false}
+          
+          Examples:
+          - "inception" -> {"isMovie": true, "correctedTitle": "Inception"}
+          - "the dark knight" -> {"isMovie": true, "correctedTitle": "The Dark Knight"}
+          - "feeling sad" -> {"isMovie": false}
+          - "want something funny" -> {"isMovie": false}`,
+				},
+				{
+					role: "user",
+					content: input,
+				},
+			],
+			response_format: { type: "json_object" },
+		});
+
+		const content = response.choices[0]?.message?.content;
+		if (!content) return null;
+
+		const parsed = JSON.parse(content);
+		
+		if (parsed.isMovie && parsed.correctedTitle) {
+			return parsed.correctedTitle;
+		}
+		
+		return null;
+	} catch (error) {
+		console.error("Error detecting movie name:", error);
+		return null;
+	}
+}
