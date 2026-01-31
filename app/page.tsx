@@ -111,7 +111,6 @@ export default function Home() {
 			});
 
 			const data = await res.json();
-			console.log("[v0] Received movies on client:", data.movies?.map((m: any) => ({ title: m.Title, poster: m.Poster })));
 			if (data.movies) {
 				setMovies(data.movies);
 				setSearchTerms(data.terms || []);

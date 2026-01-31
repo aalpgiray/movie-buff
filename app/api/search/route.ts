@@ -27,7 +27,6 @@ export async function POST(req: Request) {
 				);
 				
 				if (unseen.length >= 3) {
-					console.log("[v0] Found direct movie matches, skipping AI call");
 					// Return these results directly without calling AI
 					return NextResponse.json({
 						terms: [query],
@@ -99,8 +98,6 @@ export async function POST(req: Request) {
 			allMovies = [...directMovies, ...allMovies];
 		}
 
-		console.log("[v0] Movies being returned:", allMovies.map(m => ({ title: m.Title, poster: m.Poster })));
-		
 		return NextResponse.json({
 			terms: movieRecommendations.map((r: any) => r.title),
 			movies: allMovies,
