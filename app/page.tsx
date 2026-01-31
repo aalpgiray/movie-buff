@@ -164,7 +164,7 @@ export default function Home() {
 			<Header watchlistCount={watchlistMovies.length} watchedCount={seenMovies.length} />
 
 			<main className="min-h-screen bg-background text-foreground overflow-hidden pt-20">
-				<div className="fixed inset-0 bg-gradient-to-br from-purple-900/20 via-background to-blue-900/20 pointer-events-none" />
+				<div className="fixed inset-0 bg-gradient-to-br from-purple-50 via-background to-blue-50 pointer-events-none" />
 
 				<div className="relative z-10 flex flex-col items-center px-6 py-16 md:py-24">
 					<motion.div
@@ -174,7 +174,7 @@ export default function Home() {
 						transition={{ duration: 0.5 }}
 					>
 						<div className="text-center space-y-6">
-							<h2 className="text-5xl md:text-7xl font-bold tracking-tighter bg-clip-text text-transparent bg-gradient-to-b from-white to-white/40">
+							<h2 className="text-5xl md:text-7xl font-bold tracking-tighter bg-clip-text text-transparent bg-gradient-to-b from-foreground to-foreground/60">
 								How are you feeling?
 							</h2>
 							<p className="text-xl text-muted-foreground max-w-2xl mx-auto">
@@ -198,9 +198,9 @@ export default function Home() {
 											onToggleWatchlist={toggleWatchlist}
 										/>
 										{movie.reason && (
-											<div className="absolute -bottom-2 left-4 right-4 bg-black/80 backdrop-blur-md text-xs p-2 rounded-lg border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-20">
+											<div className="absolute -bottom-2 left-4 right-4 bg-white/95 backdrop-blur-md text-xs p-2 rounded-lg border border-border shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-20">
 												<span className="text-primary font-bold">Why?</span>{" "}
-												{movie.reason}
+												<span className="text-foreground">{movie.reason}</span>
 											</div>
 										)}
 									</div>
