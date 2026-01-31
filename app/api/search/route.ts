@@ -15,26 +15,40 @@ export async function POST(req: Request) {
 				typeof movie === "string" ? movie : movie.title || movie,
 			) || [];
 
-		// Check if this is a direct movie name search
-		const detectedMovieName = await detectMovieName(query);
-
-		let directMovie = null;
-		if (detectedMovieName) {
-			// Search for the specific movie
-			try {
-				const movieData = await searchMovies(detectedMovieName);
-				if (movieData.Search && movieData.Search.length > 0) {
-					directMovie = {
-						...movieData.Search[0],
-						reason: "Direct search result",
-					};
+		// First, try direct OMDB search to see if we get good results
+		let directMovies: any[] = [];
+		try {
+			const omdbResult = await searchMovies(query);
+			if (omdbResult.Search && omdbResult.Search.length > 0) {
+				// If we get 3+ good matches, this is likely a direct movie search
+				// Filter out already seen movies
+				const unseen = omdbResult.Search.filter(
+					(m: any) => !seenMoviesIds?.includes(m.imdbID)
+				);
+				
+				if (unseen.length >= 3) {
+					console.log("[v0] Found direct movie matches, skipping AI call");
+					// Return these results directly without calling AI
+					return NextResponse.json({
+						terms: [query],
+						movies: unseen.slice(0, 10).map((m: any) => ({
+							...m,
+							reason: "Direct search result"
+						})),
+					});
+				} else if (unseen.length > 0) {
+					// Store these for later but still call AI for more recommendations
+					directMovies = unseen.map((m: any) => ({
+						...m,
+						reason: "Direct search result"
+					}));
 				}
-			} catch (error) {
-				console.error("Error searching for direct movie:", error);
 			}
+		} catch (error) {
+			console.error("Error in direct OMDB search:", error);
 		}
 
-		// Get mood-based recommendations
+		// If we didn't get enough direct matches, use AI for mood-based recommendations
 		const movieRecommendations = await getSearchQueriesFromMood(
 			query,
 			seenTitles,
@@ -76,12 +90,13 @@ export async function POST(req: Request) {
 			(movie: any) => !seenMoviesIds?.includes(movie.imdbID),
 		);
 
-		// If we have a direct movie match, put it first (unless already seen)
-		if (directMovie && !seenMoviesIds?.includes(directMovie.imdbID)) {
-			// Remove from allMovies if it exists there
-			allMovies = allMovies.filter((m: any) => m.imdbID !== directMovie.imdbID);
-			// Add at the beginning
-			allMovies.unshift(directMovie);
+		// If we have direct movie matches from OMDB, add them at the beginning
+		if (directMovies.length > 0) {
+			// Remove duplicates from allMovies if they exist
+			const directIds = directMovies.map((m: any) => m.imdbID);
+			allMovies = allMovies.filter((m: any) => !directIds.includes(m.imdbID));
+			// Add direct matches at the beginning
+			allMovies = [...directMovies, ...allMovies];
 		}
 
 		console.log("[v0] Movies being returned:", allMovies.map(m => ({ title: m.Title, poster: m.Poster })));
