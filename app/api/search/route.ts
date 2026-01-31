@@ -84,6 +84,8 @@ export async function POST(req: Request) {
 			allMovies.unshift(directMovie);
 		}
 
+		console.log("[v0] Movies being returned:", allMovies.map(m => ({ title: m.Title, poster: m.Poster })));
+		
 		return NextResponse.json({
 			terms: movieRecommendations.map((r: any) => r.title),
 			movies: allMovies,
