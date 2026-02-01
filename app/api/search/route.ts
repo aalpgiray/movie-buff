@@ -57,7 +57,7 @@ export async function POST(req: Request) {
 			console.error("Expected array from AI but got:", movieRecommendations);
 			return NextResponse.json({
 				terms: [],
-				movies: directMovie ? [directMovie] : [],
+				movies: directMovies.length > 0 ? directMovies : [],
 			});
 		}
 
