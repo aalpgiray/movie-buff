@@ -28,12 +28,28 @@ export function Header({ watchlistCount, watchedCount }: HeaderProps) {
         const currentTheme = saved || 'auto';
         setTheme(currentTheme);
 
+        // Apply the theme immediately
+        const html = document.documentElement;
+        const isDark = currentTheme === 'dark' || (currentTheme === 'auto' && prefersDark);
+        if (isDark) {
+            html.classList.add('dark');
+        } else {
+            html.classList.remove('dark');
+        }
+
         // Listen for system theme changes
         const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
         const handleChange = (e: MediaQueryListEvent) => {
             setSystemPrefersDark(e.matches);
-            if (currentTheme === 'auto') {
-                applyTheme('auto', e.matches);
+            // Only auto-apply if theme is set to 'auto'
+            const savedTheme = localStorage.getItem('theme') || 'auto';
+            if (savedTheme === 'auto') {
+                const html = document.documentElement;
+                if (e.matches) {
+                    html.classList.add('dark');
+                } else {
+                    html.classList.remove('dark');
+                }
             }
         };
 
