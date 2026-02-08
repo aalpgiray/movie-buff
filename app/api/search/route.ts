@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { searchMovies } from "@/lib/omdb";
 import { detectMovieName, getSearchQueriesFromMood } from "@/lib/openai";
+import type { Movie, MovieRecommendation } from "@/lib/types";
 
 export async function POST(req: Request) {
 	try {
@@ -11,33 +12,33 @@ export async function POST(req: Request) {
 
 		// Extract titles from seenMovies (handle both string and object formats)
 		const seenTitles =
-			seenMovies?.map((movie: any) =>
+			seenMovies?.map((movie: string | { title?: string }) =>
 				typeof movie === "string" ? movie : movie.title || movie,
 			) || [];
 
 		// First, try direct OMDB search to see if we get good results
-		let directMovies: any[] = [];
+		let directMovies: Array<Movie & { reason: string }> = [];
 		try {
 			const omdbResult = await searchMovies(query);
 			if (omdbResult.Search && omdbResult.Search.length > 0) {
 				// If we get 3+ good matches, this is likely a direct movie search
 				// Filter out already seen movies
 				const unseen = omdbResult.Search.filter(
-					(m: any) => !seenMoviesIds?.includes(m.imdbID)
+					(m: Movie) => !seenMoviesIds?.includes(m.imdbID)
 				);
 				
 				if (unseen.length >= 3) {
 					// Return these results directly without calling AI
 					return NextResponse.json({
 						terms: [query],
-						movies: unseen.slice(0, 10).map((m: any) => ({
+						movies: unseen.slice(0, 10).map((m: Movie) => ({
 							...m,
 							reason: "Direct search result"
 						})),
 					});
 				} else if (unseen.length > 0) {
 					// Store these for later but still call AI for more recommendations
-					directMovies = unseen.map((m: any) => ({
+					directMovies = unseen.map((m: Movie) => ({
 						...m,
 						reason: "Direct search result"
 					}));
@@ -62,14 +63,14 @@ export async function POST(req: Request) {
 		}
 
 		// Search OMDb for each recommendation
-		const moviePromises = movieRecommendations.map(async (rec: any) => {
+		const moviePromises = movieRecommendations.map(async (rec: MovieRecommendation) => {
 			const title = rec.title;
 			try {
 				const data = await searchMovies(title);
 
 				if (data.Search && data.Search.length > 0) {
 					const exactMatch = data.Search.find(
-						(m: any) => m.Title.toLowerCase() === title.toLowerCase(),
+						(m: Movie) => m.Title.toLowerCase() === title.toLowerCase(),
 					);
 					const movie = exactMatch || data.Search[0];
 					return { ...movie, reason: rec.reason };
@@ -82,24 +83,24 @@ export async function POST(req: Request) {
 		});
 
 		const searchResults = await Promise.all(moviePromises);
-		let allMovies = searchResults.filter((m) => m !== null);
+		let allMovies: Array<Movie & { reason: string }> = searchResults.filter((m): m is (Movie & { reason: string }) => m !== null);
 
 		// Filter out movies already seen
 		allMovies = allMovies.filter(
-			(movie: any) => !seenMoviesIds?.includes(movie.imdbID),
+			(movie: Movie) => !seenMoviesIds?.includes(movie.imdbID),
 		);
 
 		// If we have direct movie matches from OMDB, add them at the beginning
 		if (directMovies.length > 0) {
 			// Remove duplicates from allMovies if they exist
-			const directIds = directMovies.map((m: any) => m.imdbID);
-			allMovies = allMovies.filter((m: any) => !directIds.includes(m.imdbID));
+			const directIds = directMovies.map((m: Movie) => m.imdbID);
+			allMovies = allMovies.filter((m: Movie) => !directIds.includes(m.imdbID));
 			// Add direct matches at the beginning
 			allMovies = [...directMovies, ...allMovies];
 		}
 
 		return NextResponse.json({
-			terms: movieRecommendations.map((r: any) => r.title),
+			terms: movieRecommendations.map((r: MovieRecommendation) => r.title),
 			movies: allMovies,
 		});
 	} catch (error) {
