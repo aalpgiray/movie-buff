@@ -1,11 +1,17 @@
 import { NextResponse } from "next/server";
 import { searchMovies } from "@/lib/omdb";
-import { detectMovieName, getSearchQueriesFromMood } from "@/lib/openai";
+import { getSearchQueriesFromMood } from "@/lib/openai";
 import type { Movie, MovieRecommendation } from "@/lib/types";
+
+interface RequestBody {
+	query: string;
+	seenMovies?: Array<string | { title?: string }>;
+	seenMovieIds?: string[];
+}
 
 export async function POST(req: Request) {
 	try {
-		const { query, seenMovies, seenMovieIds: seenMoviesIds } = await req.json();
+		const { query, seenMovies, seenMovieIds: seenMoviesIds } = (await req.json()) as RequestBody;
 		if (!query) {
 			return NextResponse.json({ error: "Query is required" }, { status: 400 });
 		}
@@ -13,8 +19,8 @@ export async function POST(req: Request) {
 		// Extract titles from seenMovies (handle both string and object formats)
 		const seenTitles =
 			seenMovies?.map((movie: string | { title?: string }) =>
-				typeof movie === "string" ? movie : movie.title || movie,
-			) || [];
+				typeof movie === "string" ? movie : movie.title || "",
+			).filter(Boolean) || [];
 
 		// First, try direct OMDB search to see if we get good results
 		let directMovies: Array<Movie & { reason: string }> = [];
