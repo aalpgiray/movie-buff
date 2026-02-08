@@ -41,9 +41,9 @@ export function Header({ watchlistCount, watchedCount }: HeaderProps) {
         return () => mediaQuery.removeEventListener('change', handleChange);
     }, []);
 
-    const applyTheme = (newTheme: ThemeMode, prefersDark?: boolean) => {
+    const applyTheme = (newTheme: ThemeMode, prefersDark: boolean = systemPrefersDark) => {
         const html = document.documentElement;
-        const isDark = newTheme === 'dark' || (newTheme === 'auto' && (prefersDark ?? systemPrefersDark));
+        const isDark = newTheme === 'dark' || (newTheme === 'auto' && prefersDark);
 
         if (isDark) {
             html.classList.add('dark');
