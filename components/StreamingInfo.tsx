@@ -4,8 +4,8 @@ import { AvailabilityMatrix } from "./AvailabilityMatrix";
 export async function StreamingInfo({ imdbID }: { imdbID: string }) {
   const data = await getStreamingAvailability(imdbID);
 
-  // V4 API returns a Show object with streamingOptions and countries metadata
-  const streamingInfo = data?.streamingOptions || {};
+  // V4 API returns a Show object with streamingInfo and countries metadata
+  const streamingInfo = data?.streamingInfo || {};
   const countriesData = data?.countries || [];
 
   return (
