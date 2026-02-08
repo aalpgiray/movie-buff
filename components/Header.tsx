@@ -1,6 +1,6 @@
 "use client";
 
-import { Eye, Bookmark, Film, Moon, Sun } from "lucide-react";
+import { Eye, Bookmark, Film, Moon, Sun, Monitor } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -9,38 +9,77 @@ interface HeaderProps {
     watchedCount: number;
 }
 
+type ThemeMode = 'auto' | 'light' | 'dark';
+
 export function Header({ watchlistCount, watchedCount }: HeaderProps) {
-    const [isDark, setIsDark] = useState(true);
+    const [theme, setTheme] = useState<ThemeMode>('auto');
     const [mounted, setMounted] = useState(false);
+    const [systemPrefersDark, setSystemPrefersDark] = useState(true);
 
     useEffect(() => {
         setMounted(true);
-        const isDarkMode = document.documentElement.classList.contains('dark');
-        setIsDark(isDarkMode);
+
+        // Detect system preference
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        setSystemPrefersDark(prefersDark);
+
+        // Get saved theme
+        const saved = localStorage.getItem('theme') as ThemeMode | null;
+        const currentTheme = saved || 'auto';
+        setTheme(currentTheme);
+
+        // Listen for system theme changes
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        const handleChange = (e: MediaQueryListEvent) => {
+            setSystemPrefersDark(e.matches);
+            if (currentTheme === 'auto') {
+                applyTheme('auto', e.matches);
+            }
+        };
+
+        mediaQuery.addEventListener('change', handleChange);
+        return () => mediaQuery.removeEventListener('change', handleChange);
     }, []);
 
-    const toggleTheme = () => {
+    const applyTheme = (newTheme: ThemeMode, prefersDark?: boolean) => {
         const html = document.documentElement;
-        const currentIsDark = html.classList.contains('dark');
-        const newIsDark = !currentIsDark;
+        const isDark = newTheme === 'dark' || (newTheme === 'auto' && (prefersDark ?? systemPrefersDark));
 
-        console.log('Toggling theme from', currentIsDark ? 'dark' : 'light', 'to', newIsDark ? 'dark' : 'light');
-
-        // Update DOM class
-        if (newIsDark) {
+        if (isDark) {
             html.classList.add('dark');
         } else {
             html.classList.remove('dark');
         }
+    };
 
-        // Force re-render by updating state
-        setIsDark(newIsDark);
+    const cycleTheme = () => {
+        const themes: ThemeMode[] = ['auto', 'light', 'dark'];
+        const currentIndex = themes.indexOf(theme);
+        const nextIndex = (currentIndex + 1) % themes.length;
+        const newTheme = themes[nextIndex];
 
-        // Save to localStorage
-        localStorage.setItem('theme', newIsDark ? 'dark' : 'light');
+        setTheme(newTheme);
+        applyTheme(newTheme);
+        localStorage.setItem('theme', newTheme);
 
-        // Trigger a custom event that other components can listen to
-        window.dispatchEvent(new CustomEvent('themechange', { detail: { theme: newIsDark ? 'dark' : 'light' } }));
+        window.dispatchEvent(new CustomEvent('themechange', { detail: { theme: newTheme } }));
+    };
+
+    const getThemeIcon = () => {
+        if (theme === 'auto') {
+            return <Monitor className="h-5 w-5" />;
+        } else if (theme === 'dark') {
+            return <Moon className="h-5 w-5" />;
+        } else {
+            return <Sun className="h-5 w-5" />;
+        }
+    };
+
+    const getThemeLabel = () => {
+        if (theme === 'auto') {
+            return `Auto (${systemPrefersDark ? 'Dark' : 'Light'})`;
+        }
+        return theme.charAt(0).toUpperCase() + theme.slice(1);
     };
 
     return (
