@@ -5,14 +5,7 @@ import { useEffect, useState } from "react";
 import { MovieCard } from "@/components/MovieCard";
 import { SearchBar } from "@/components/SearchBar";
 import { Header } from "@/components/Header";
-
-interface Movie {
-	Title: string;
-	Year: string;
-	imdbID: string;
-	Type: string;
-	Poster: string;
-}
+import type { Movie } from "@/lib/types";
 
 export default function Home() {
 	const [movies, setMovies] = useState<Movie[]>([]);
@@ -188,7 +181,7 @@ export default function Home() {
 
 						<div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 							<AnimatePresence mode="popLayout">
-								{movies.map((movie: any) => (
+								{movies.map((movie: Movie) => (
 									<div key={movie.imdbID} className="relative group">
 										<MovieCard
 											movie={movie}
