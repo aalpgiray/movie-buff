@@ -51,11 +51,14 @@ export function MovieDetailModal({
 					const res = await fetch(`/api/movie/${movie.imdbID}`);
 					const data = await res.json();
 					if (isMounted) {
-						setDetails(data.details);
-						setStreaming(data.streaming);
+						setDetails(data.details ?? null);
+						setStreaming(data.streaming ?? { streamingInfo: {} });
 					}
 				} catch (err) {
 					console.error(err);
+					if (isMounted) {
+						setStreaming({ streamingInfo: {} });
+					}
 				} finally {
 					if (isMounted) setLoading(false);
 				}
