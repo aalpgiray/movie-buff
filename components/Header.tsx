@@ -85,14 +85,16 @@ export function Header({ watchlistCount, watchedCount }: HeaderProps) {
                         </Link>
                         {mounted && (
                             <button
+                                type="button"
                                 onClick={toggleTheme}
-                                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary hover:bg-secondary/80 border border-border text-sm font-medium text-secondary-foreground transition-all hover:scale-105"
+                                className="p-2 rounded-lg bg-secondary hover:bg-secondary/80 border border-border text-secondary-foreground transition-all hover:scale-110 active:scale-95"
                                 title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+                                aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
                             >
                                 {isDark ? (
-                                    <Sun className="h-4 w-4" />
+                                    <Sun className="h-5 w-5" />
                                 ) : (
-                                    <Moon className="h-4 w-4" />
+                                    <Moon className="h-5 w-5" />
                                 )}
                             </button>
                         )}
