@@ -4,14 +4,7 @@ import { useEffect, useState } from "react";
 import { MovieCard } from "@/components/MovieCard";
 import { ArrowLeft, Bookmark } from "lucide-react";
 import Link from "next/link";
-
-interface Movie {
-    Title: string;
-    Year: string;
-    imdbID: string;
-    Type: string;
-    Poster: string;
-}
+import type { Movie } from "@/lib/types";
 
 export default function WatchlistPage() {
     const [watchlistMovies, setWatchlistMovies] = useState<Movie[]>([]);
@@ -100,7 +93,7 @@ export default function WatchlistPage() {
                         {[...Array(8)].map((_, i) => (
                             <div
                                 key={i}
-                                className="aspect-[2/3] rounded-xl bg-white/5 animate-pulse"
+                                className="aspect-[2/3] rounded-xl bg-secondary animate-pulse"
                             />
                         ))}
                     </div>

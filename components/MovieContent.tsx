@@ -16,11 +16,11 @@ export async function MovieContent({ params }: MovieContentProps) {
 
             <Suspense
                 fallback={
-                    <div className="mt-8 pt-8 border-t border-white/10">
-                        <h3 className="font-semibold text-xl mb-4 text-white">
+                    <div className="mt-8 pt-8 border-t border-border">
+                        <h3 className="font-semibold text-xl mb-4 text-foreground">
                             Searching for trailer
                         </h3>
-                        <div className="relative w-full rounded-xl bg-white/5 animate-pulse" style={{ paddingBottom: "56.25%" }} />
+                        <div className="relative w-full rounded-xl bg-secondary animate-pulse" style={{ paddingBottom: "56.25%" }} />
                     </div>
                 }
             >
@@ -29,8 +29,8 @@ export async function MovieContent({ params }: MovieContentProps) {
 
             <Suspense
                 fallback={
-                    <div className="mt-8 pt-8 border-t border-white/10">
-                        <h3 className="font-semibold text-xl mb-6 text-white">
+                    <div className="mt-8 pt-8 border-t border-border">
+                        <h3 className="font-semibold text-xl mb-6 text-foreground">
                             Streaming Availability
                         </h3>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

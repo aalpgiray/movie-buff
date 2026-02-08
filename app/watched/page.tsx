@@ -4,14 +4,7 @@ import { useEffect, useState } from "react";
 import { MovieCard } from "@/components/MovieCard";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-
-interface Movie {
-    Title: string;
-    Year: string;
-    imdbID: string;
-    Type: string;
-    Poster: string;
-}
+import type { Movie } from "@/lib/types";
 
 export default function WatchedMoviesPage() {
     const [watchedMovies, setWatchedMovies] = useState<Movie[]>([]);
@@ -95,14 +88,14 @@ export default function WatchedMoviesPage() {
                         {[...Array(8)].map((_, i) => (
                             <div
                                 key={i}
-                                className="aspect-[2/3] rounded-xl bg-white/5 animate-pulse"
+                                className="aspect-[2/3] rounded-xl bg-secondary animate-pulse"
                             />
                         ))}
                     </div>
                 ) : watchedMovies.length === 0 ? (
                     <div className="text-center py-20">
                         <p className="text-muted-foreground text-lg mb-4">
-                            You haven't marked any movies as watched yet.
+                            You haven&apos;t marked any movies as watched yet.
                         </p>
                         <Link
                             href="/"

@@ -1,16 +1,105 @@
 "use client";
 
-import { Eye, Bookmark, Film } from "lucide-react";
+import { Eye, Bookmark, Film, Moon, Sun, Monitor } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 interface HeaderProps {
     watchlistCount: number;
     watchedCount: number;
 }
 
+type ThemeMode = 'auto' | 'light' | 'dark';
+
 export function Header({ watchlistCount, watchedCount }: HeaderProps) {
+    const [theme, setTheme] = useState<ThemeMode>('auto');
+    const [mounted, setMounted] = useState(false);
+    const [systemPrefersDark, setSystemPrefersDark] = useState(true);
+
+    useEffect(() => {
+        setMounted(true);
+
+        // Detect system preference
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        setSystemPrefersDark(prefersDark);
+
+        // Get saved theme
+        const saved = localStorage.getItem('theme') as ThemeMode | null;
+        const currentTheme = saved || 'auto';
+        setTheme(currentTheme);
+
+        // Apply the theme immediately
+        const html = document.documentElement;
+        const isDark = currentTheme === 'dark' || (currentTheme === 'auto' && prefersDark);
+        if (isDark) {
+            html.classList.add('dark');
+        } else {
+            html.classList.remove('dark');
+        }
+
+        // Listen for system theme changes
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        const handleChange = (e: MediaQueryListEvent) => {
+            setSystemPrefersDark(e.matches);
+            // Only auto-apply if theme is set to 'auto'
+            const savedTheme = localStorage.getItem('theme') || 'auto';
+            if (savedTheme === 'auto') {
+                const html = document.documentElement;
+                if (e.matches) {
+                    html.classList.add('dark');
+                } else {
+                    html.classList.remove('dark');
+                }
+            }
+        };
+
+        mediaQuery.addEventListener('change', handleChange);
+        return () => mediaQuery.removeEventListener('change', handleChange);
+    }, []);
+
+    const cycleTheme = () => {
+        const themes: ThemeMode[] = ['auto', 'light', 'dark'];
+        const currentIndex = themes.indexOf(theme);
+        const nextIndex = (currentIndex + 1) % themes.length;
+        const newTheme = themes[nextIndex];
+
+        // Apply theme with current system preference
+        const html = document.documentElement;
+        const isDark = newTheme === 'dark' || (newTheme === 'auto' && systemPrefersDark);
+
+        if (isDark) {
+            html.classList.add('dark');
+        } else {
+            html.classList.remove('dark');
+        }
+
+        // Update state and storage
+        setTheme(newTheme);
+        localStorage.setItem('theme', newTheme);
+
+        // Dispatch event
+        window.dispatchEvent(new CustomEvent('themechange', { detail: { theme: newTheme } }));
+    };
+
+    const getThemeIcon = () => {
+        if (theme === 'auto') {
+            return <Monitor className="h-5 w-5" />;
+        } else if (theme === 'dark') {
+            return <Moon className="h-5 w-5" />;
+        } else {
+            return <Sun className="h-5 w-5" />;
+        }
+    };
+
+    const getThemeLabel = () => {
+        if (theme === 'auto') {
+            return `Auto (${systemPrefersDark ? 'Dark' : 'Light'})`;
+        }
+        return theme.charAt(0).toUpperCase() + theme.slice(1);
+    };
+
     return (
-        <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-white/10">
+        <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
             <div className="max-w-7xl mx-auto px-6 py-4">
                 <div className="flex items-center justify-between">
                     {/* Logo */}
@@ -22,7 +111,7 @@ export function Header({ watchlistCount, watchedCount }: HeaderProps) {
                             </div>
                         </div>
                         <div>
-                            <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-white/60">
+                            <h1 className="text-xl font-bold text-foreground">
                                 Mood Movie Search
                             </h1>
                             <p className="text-xs text-muted-foreground">Discover by feeling</p>
@@ -33,7 +122,7 @@ export function Header({ watchlistCount, watchedCount }: HeaderProps) {
                     <nav className="flex items-center gap-3">
                         <Link
                             href="/watchlist"
-                            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-sm font-medium transition-all hover:scale-105"
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary hover:bg-secondary/80 border border-border text-sm font-medium text-secondary-foreground transition-all hover:scale-105"
                         >
                             <Bookmark className="h-4 w-4 text-amber-500" />
                             <span className="hidden sm:inline">Watchlist</span>
@@ -45,7 +134,7 @@ export function Header({ watchlistCount, watchedCount }: HeaderProps) {
                         </Link>
                         <Link
                             href="/watched"
-                            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-sm font-medium transition-all hover:scale-105"
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary hover:bg-secondary/80 border border-border text-sm font-medium text-secondary-foreground transition-all hover:scale-105"
                         >
                             <Eye className="h-4 w-4 text-green-500" />
                             <span className="hidden sm:inline">Watched</span>
@@ -55,6 +144,17 @@ export function Header({ watchlistCount, watchedCount }: HeaderProps) {
                                 </span>
                             )}
                         </Link>
+                        {mounted && (
+                            <button
+                                type="button"
+                                onClick={cycleTheme}
+                                className="p-2 rounded-lg bg-secondary hover:bg-secondary/80 border border-border text-secondary-foreground transition-all hover:scale-110 active:scale-95"
+                                title={`Theme: ${getThemeLabel()}. Click to cycle.`}
+                                aria-label={`Theme: ${getThemeLabel()}. Click to cycle.`}
+                            >
+                                {getThemeIcon()}
+                            </button>
+                        )}
                     </nav>
                 </div>
             </div>

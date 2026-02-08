@@ -5,14 +5,7 @@ import { Eye, Star, Bookmark } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-
-interface Movie {
-	Title: string;
-	Year: string;
-	imdbID: string;
-	Type: string;
-	Poster: string;
-}
+import type { Movie } from "@/lib/types";
 
 interface MovieCardProps {
 	movie: Movie;
@@ -53,11 +46,11 @@ export function MovieCard({ movie, onToggleSeen, isSeen, onToggleWatchlist, isIn
 							<Star className="h-12 w-12 text-muted-foreground" />
 						</div>
 					)}
-					<div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+					<div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 				</div>
 
 				<div className="p-4 bg-card/95 backdrop-blur-sm">
-					<h3 className="font-semibold text-sm line-clamp-2 mb-1">
+					<h3 className="font-semibold text-sm line-clamp-2 mb-1 text-card-foreground">
 						{movie.Title}
 					</h3>
 					<p className="text-xs text-muted-foreground">{movie.Year}</p>
@@ -77,7 +70,7 @@ export function MovieCard({ movie, onToggleSeen, isSeen, onToggleWatchlist, isIn
 							"p-2 rounded-full backdrop-blur-md transition-all",
 							isInWatchlist
 								? "bg-amber-500 text-white shadow-lg shadow-amber-500/50"
-								: "bg-black/50 text-white hover:bg-black/70"
+								: "bg-black/40 text-white hover:bg-black/60"
 						)}
 						title={isInWatchlist ? "Remove from watchlist" : "Add to watchlist"}
 					>
@@ -96,7 +89,7 @@ export function MovieCard({ movie, onToggleSeen, isSeen, onToggleWatchlist, isIn
 						"p-2 rounded-full backdrop-blur-md transition-all",
 						isSeen
 							? "bg-green-500 text-white shadow-lg shadow-green-500/50"
-							: "bg-black/50 text-white hover:bg-black/70"
+							: "bg-black/40 text-white hover:bg-black/60"
 					)}
 					title={isSeen ? "Mark as unwatched" : "Mark as watched"}
 				>

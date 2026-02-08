@@ -5,14 +5,7 @@ import { useEffect, useState } from "react";
 import { MovieCard } from "@/components/MovieCard";
 import { SearchBar } from "@/components/SearchBar";
 import { Header } from "@/components/Header";
-
-interface Movie {
-	Title: string;
-	Year: string;
-	imdbID: string;
-	Type: string;
-	Poster: string;
-}
+import type { Movie } from "@/lib/types";
 
 export default function Home() {
 	const [movies, setMovies] = useState<Movie[]>([]);
@@ -175,7 +168,7 @@ export default function Home() {
 					>
 						<div className="text-center space-y-6">
 							<h2 className="text-5xl md:text-7xl font-bold tracking-tighter bg-clip-text text-transparent bg-gradient-to-b from-foreground to-foreground/60">
-								How are you feeling?
+								How are you feeling&apos;?
 							</h2>
 							<p className="text-xl text-muted-foreground max-w-2xl mx-auto">
 								Describe your mood, and we'll find the perfect movies to match.
@@ -188,7 +181,7 @@ export default function Home() {
 
 						<div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 							<AnimatePresence mode="popLayout">
-								{movies.map((movie: any) => (
+								{movies.map((movie: Movie) => (
 									<div key={movie.imdbID} className="relative group">
 										<MovieCard
 											movie={movie}
@@ -198,9 +191,9 @@ export default function Home() {
 											onToggleWatchlist={toggleWatchlist}
 										/>
 										{movie.reason && (
-											<div className="absolute -bottom-2 left-4 right-4 bg-white/95 backdrop-blur-md text-xs p-2 rounded-lg border border-border shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-20">
+											<div className="absolute -bottom-2 left-4 right-4 bg-card/95 backdrop-blur-md text-xs p-2 rounded-lg border border-border shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-20">
 												<span className="text-primary font-bold">Why?</span>{" "}
-												<span className="text-foreground">{movie.reason}</span>
+												<span className="text-card-foreground">{movie.reason}</span>
 											</div>
 										)}
 									</div>

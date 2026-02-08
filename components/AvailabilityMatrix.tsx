@@ -3,18 +3,7 @@
 import { clsx } from "clsx";
 import { ExternalLink, Filter } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-
-interface StreamingOption {
-	service: { id: string; name: string };
-	link: string;
-	type: string; // 'subscription' | 'rent' | 'buy' | 'free' | 'addon'
-}
-
-interface CountryMetadata {
-	countryCode: string;
-	name: string;
-	flagEmoji: string;
-}
+import type { StreamingOption, CountryMetadata } from "@/lib/types";
 
 interface AvailabilityMatrixProps {
 	availability: Record<string, StreamingOption[]>;
@@ -367,7 +356,7 @@ export function AvailabilityMatrix({
 	}, [availability, userCountry]);
 
 	// Initialize selected platforms with top 5 or all if fewer
-	useMemo(() => {
+	useEffect(() => {
 		if (selectedPlatforms.length === 0 && allPlatforms.length > 0) {
 			const defaults = ["netflix", "prime", "disney", "hbo", "apple"];
 			const initial = allPlatforms
@@ -381,7 +370,7 @@ export function AvailabilityMatrix({
 				setSelectedPlatforms(initial);
 			}
 		}
-	}, [allPlatforms, selectedPlatforms.length]);
+	}, [allPlatforms]);
 
 	if (!availability || Object.keys(availability).length === 0) {
 		return (
@@ -445,11 +434,11 @@ export function AvailabilityMatrix({
 			</div>
 
 			{/* Matrix */}
-			<div className="overflow-x-auto rounded-xl border border-white/10 bg-black/20 max-h-[500px] relative">
+			<div className="overflow-x-auto rounded-xl border border-border bg-secondary max-h-[500px] relative">
 				<table className="w-full text-sm text-left border-collapse">
-					<thead className="sticky top-0 z-10 bg-[#0a0a0a] shadow-sm shadow-white/5">
-						<tr className="border-b border-white/10">
-							<th className="p-4 font-medium text-muted-foreground min-w-[150px] bg-[#0a0a0a]">
+					<thead className="sticky top-0 z-10 bg-card shadow-sm">
+						<tr className="border-b border-border">
+							<th className="p-4 font-medium text-card-foreground min-w-[150px] bg-card">
 								Country
 							</th>
 							{selectedPlatforms.map((platformId) => {
@@ -457,7 +446,7 @@ export function AvailabilityMatrix({
 								return (
 									<th
 										key={platformId}
-										className="p-4 font-medium text-center min-w-[120px] bg-[#0a0a0a]"
+										className="p-4 font-medium text-center min-w-[120px] bg-card text-card-foreground"
 									>
 										{platform?.name}
 									</th>
@@ -465,7 +454,7 @@ export function AvailabilityMatrix({
 							})}
 						</tr>
 					</thead>
-					<tbody className="divide-y divide-white/5">
+					<tbody className="divide-y divide-border">
 						{allCountries.map((countryCode) => {
 							// Use API metadata if available, fallback to code
 							const countryInfo = countryLookup.get(countryCode) || {
@@ -482,10 +471,10 @@ export function AvailabilityMatrix({
 										"transition-colors",
 										isUserCountry
 											? "bg-primary/5 hover:bg-primary/10"
-											: "hover:bg-white/5",
+											: "hover:bg-secondary/80",
 									)}
 								>
-									<td className="p-4 font-medium">
+									<td className="p-4 font-medium text-foreground">
 										<span className="mr-2 text-lg">{countryInfo.flag}</span>
 										{countryInfo.name}
 										{isUserCountry && (
@@ -508,14 +497,14 @@ export function AvailabilityMatrix({
 														href={options[0].link}
 														target="_blank"
 														rel="noopener noreferrer"
-														className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/10 hover:bg-primary hover:text-white transition-all group text-xs"
+														className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-primary/20 hover:bg-primary hover:text-primary-foreground transition-all group text-xs text-primary"
 														title={`Watch on ${allPlatforms.find((p) => p.id === platformId)?.name}`}
 													>
 														<span className="font-medium">{formatTypes(options)}</span>
 														<ExternalLink className="h-3 w-3 opacity-70 group-hover:opacity-100" />
 													</a>
 												) : (
-													<span className="text-muted-foreground/20 block">
+													<span className="text-muted-foreground/40 block">
 														•
 													</span>
 												)}
