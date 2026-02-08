@@ -485,7 +485,7 @@ export function AvailabilityMatrix({
 											: "hover:bg-secondary/80",
 									)}
 								>
-									<td className="p-4 font-medium">
+									<td className="p-4 font-medium text-foreground">
 										<span className="mr-2 text-lg">{countryInfo.flag}</span>
 										{countryInfo.name}
 										{isUserCountry && (
