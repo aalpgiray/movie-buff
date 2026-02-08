@@ -58,10 +58,21 @@ export function Header({ watchlistCount, watchedCount }: HeaderProps) {
         const nextIndex = (currentIndex + 1) % themes.length;
         const newTheme = themes[nextIndex];
 
+        // Apply theme with current system preference
+        const html = document.documentElement;
+        const isDark = newTheme === 'dark' || (newTheme === 'auto' && systemPrefersDark);
+
+        if (isDark) {
+            html.classList.add('dark');
+        } else {
+            html.classList.remove('dark');
+        }
+
+        // Update state and storage
         setTheme(newTheme);
-        applyTheme(newTheme);
         localStorage.setItem('theme', newTheme);
 
+        // Dispatch event
         window.dispatchEvent(new CustomEvent('themechange', { detail: { theme: newTheme } }));
     };
 
