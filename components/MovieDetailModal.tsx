@@ -9,21 +9,8 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { AvailabilityMatrix } from "./AvailabilityMatrix";
-import type { Movie, StreamingOption, CountryMetadata } from "@/lib/types";
-
-interface MovieDetails {
-	Rated?: string;
-	Runtime?: string;
-	Plot?: string;
-	imdbRating?: string;
-	Director?: string;
-	Actors?: string;
-}
-
-interface StreamingInfo {
-	streamingInfo: Record<string, StreamingOption[]>;
-	countries?: CountryMetadata[];
-}
+import type { Movie, MovieDetails } from "@/lib/types";
+import type { StreamingAvailabilityResponse } from "@/lib/streaming";
 
 interface MovieDetailModalProps {
 	isOpen: boolean;
