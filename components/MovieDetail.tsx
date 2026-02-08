@@ -1,9 +1,10 @@
 import { Star } from "lucide-react";
 import Image from "next/image";
 import { getMovieDetails } from "@/lib/omdb";
+import type { MovieDetails } from "@/lib/types";
 
 export async function MovieDetail({ imdbID }: { imdbID: string }) {
-  const movie = await getMovieDetails(imdbID);
+  const movie = await getMovieDetails(imdbID) as MovieDetails | null;
 
   if (!movie) {
     return <div className="text-center text-muted-foreground">Movie details not found.</div>;
