@@ -447,9 +447,9 @@ export function AvailabilityMatrix({
 			{/* Matrix */}
 			<div className="overflow-x-auto rounded-xl border border-border bg-secondary max-h-[500px] relative">
 				<table className="w-full text-sm text-left border-collapse">
-					<thead className="sticky top-0 z-10 bg-[#0a0a0a] shadow-sm shadow-white/5">
-						<tr className="border-b border-white/10">
-							<th className="p-4 font-medium text-muted-foreground min-w-[150px] bg-[#0a0a0a]">
+					<thead className="sticky top-0 z-10 bg-card shadow-sm">
+						<tr className="border-b border-border">
+							<th className="p-4 font-medium text-card-foreground min-w-[150px] bg-card">
 								Country
 							</th>
 							{selectedPlatforms.map((platformId) => {
