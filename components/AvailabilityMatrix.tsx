@@ -3,18 +3,7 @@
 import { clsx } from "clsx";
 import { ExternalLink, Filter } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-
-interface StreamingOption {
-	service: { id: string; name: string };
-	link: string;
-	type: string; // 'subscription' | 'rent' | 'buy' | 'free' | 'addon'
-}
-
-interface CountryMetadata {
-	countryCode: string;
-	name: string;
-	flagEmoji: string;
-}
+import type { StreamingOption, CountryMetadata } from "@/lib/types";
 
 interface AvailabilityMatrixProps {
 	availability: Record<string, StreamingOption[]>;
