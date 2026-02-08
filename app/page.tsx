@@ -191,9 +191,9 @@ export default function Home() {
 											onToggleWatchlist={toggleWatchlist}
 										/>
 										{movie.reason && (
-											<div className="absolute -bottom-2 left-4 right-4 bg-white/95 backdrop-blur-md text-xs p-2 rounded-lg border border-border shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-20">
+											<div className="absolute -bottom-2 left-4 right-4 bg-card/95 backdrop-blur-md text-xs p-2 rounded-lg border border-border shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-20">
 												<span className="text-primary font-bold">Why?</span>{" "}
-												<span className="text-foreground">{movie.reason}</span>
+												<span className="text-card-foreground">{movie.reason}</span>
 											</div>
 										)}
 									</div>
