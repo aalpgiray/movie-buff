@@ -1,7 +1,16 @@
+import type { StreamingOption, CountryMetadata } from "./types";
+
 const RAPID_API_KEY = process.env.STREAMING_AVAILABILITY_API_KEY;
 const BASE_URL = "https://streaming-availability.p.rapidapi.com";
 
-export async function getStreamingAvailability(imdbId: string) {
+export interface StreamingAvailabilityResponse {
+	streamingInfo: Record<string, StreamingOption[]>;
+	countries?: CountryMetadata[];
+}
+
+export async function getStreamingAvailability(
+	imdbId: string,
+): Promise<StreamingAvailabilityResponse | null> {
 	"use cache";
 
 	if (!RAPID_API_KEY) {
@@ -29,7 +38,7 @@ export async function getStreamingAvailability(imdbId: string) {
 			return null;
 		}
 
-		const data = await response.json();
+		const data: StreamingAvailabilityResponse = await response.json();
 		return data;
 	} catch (error) {
 		console.error("Error fetching streaming data:", error);
