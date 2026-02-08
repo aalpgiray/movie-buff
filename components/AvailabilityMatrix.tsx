@@ -482,7 +482,7 @@ export function AvailabilityMatrix({
 										"transition-colors",
 										isUserCountry
 											? "bg-primary/5 hover:bg-primary/10"
-											: "hover:bg-white/5",
+											: "hover:bg-secondary/80",
 									)}
 								>
 									<td className="p-4 font-medium">
