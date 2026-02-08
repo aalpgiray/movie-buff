@@ -38,10 +38,17 @@ export function MovieDetailModal({
 
 				try {
 					const res = await fetch(`/api/movie/${movie.imdbID}`);
-					const data = await res.json();
+					const data = (await res.json()) as {
+						details: MovieDetails | null;
+						streaming: StreamingAvailabilityResponse | null;
+					};
 					if (isMounted) {
 						setDetails(data.details ?? null);
-						setStreaming(data.streaming ?? { streamingInfo: {} });
+						setStreaming(
+							data.streaming ?? {
+								streamingInfo: {},
+							},
+						);
 					}
 				} catch (err) {
 					console.error(err);
