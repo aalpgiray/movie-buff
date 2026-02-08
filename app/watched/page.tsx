@@ -4,14 +4,7 @@ import { useEffect, useState } from "react";
 import { MovieCard } from "@/components/MovieCard";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-
-interface Movie {
-    Title: string;
-    Year: string;
-    imdbID: string;
-    Type: string;
-    Poster: string;
-}
+import type { Movie } from "@/lib/types";
 
 export default function WatchedMoviesPage() {
     const [watchedMovies, setWatchedMovies] = useState<Movie[]>([]);
