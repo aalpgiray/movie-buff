@@ -1,7 +1,8 @@
 "use client";
 
-import { Eye, Bookmark, Film } from "lucide-react";
+import { Eye, Bookmark, Film, Moon, Sun } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 interface HeaderProps {
     watchlistCount: number;
@@ -9,8 +10,29 @@ interface HeaderProps {
 }
 
 export function Header({ watchlistCount, watchedCount }: HeaderProps) {
+    const [isDark, setIsDark] = useState(true);
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+        const theme = localStorage.getItem('theme') || 'dark';
+        setIsDark(theme === 'dark');
+    }, []);
+
+    const toggleTheme = () => {
+        const newTheme = isDark ? 'light' : 'dark';
+        setIsDark(!isDark);
+        localStorage.setItem('theme', newTheme);
+
+        if (newTheme === 'dark') {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    };
+
     return (
-        <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-white/10">
+        <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
             <div className="max-w-7xl mx-auto px-6 py-4">
                 <div className="flex items-center justify-between">
                     {/* Logo */}
