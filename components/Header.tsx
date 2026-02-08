@@ -131,16 +131,12 @@ export function Header({ watchlistCount, watchedCount }: HeaderProps) {
                         {mounted && (
                             <button
                                 type="button"
-                                onClick={toggleTheme}
+                                onClick={cycleTheme}
                                 className="p-2 rounded-lg bg-secondary hover:bg-secondary/80 border border-border text-secondary-foreground transition-all hover:scale-110 active:scale-95"
-                                title={isDark ? "Switch to light mode" : "Switch to dark mode"}
-                                aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+                                title={`Theme: ${getThemeLabel()}. Click to cycle.`}
+                                aria-label={`Theme: ${getThemeLabel()}. Click to cycle.`}
                             >
-                                {isDark ? (
-                                    <Sun className="h-5 w-5" />
-                                ) : (
-                                    <Moon className="h-5 w-5" />
-                                )}
+                                {getThemeIcon()}
                             </button>
                         )}
                     </nav>
