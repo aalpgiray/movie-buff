@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import type { MovieRecommendation } from "@/lib/types";
 
 const openai = new OpenAI({
 	apiKey: process.env.OPENAI_API_KEY,
@@ -7,10 +8,10 @@ const openai = new OpenAI({
 export async function getSearchQueriesFromMood(
 	mood: string,
 	seenMovies: string[] = [],
-) {
+): Promise<MovieRecommendation[]> {
 	if (!process.env.OPENAI_API_KEY) {
 		console.warn("OPENAI_API_KEY is not set.");
-		return [mood];
+		return [{ title: mood, reason: "Fallback search" }];
 	}
 
 	try {
@@ -62,7 +63,7 @@ export async function getSearchQueriesFromMood(
 		// Fallback for other structures
 		if (Array.isArray(parsed)) {
 			return parsed;
-		} else if (typeof parsed === "object" && parsed !== null && parsed.title) {
+		} else if (typeof parsed === "object" && parsed !== null && "title" in parsed) {
 			return [parsed];
 		}
 
