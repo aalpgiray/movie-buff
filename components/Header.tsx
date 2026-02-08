@@ -15,20 +15,26 @@ export function Header({ watchlistCount, watchedCount }: HeaderProps) {
 
     useEffect(() => {
         setMounted(true);
-        const theme = localStorage.getItem('theme') || 'dark';
-        setIsDark(theme === 'dark');
+        // Sync state with current DOM state
+        const isDarkMode = document.documentElement.classList.contains('dark');
+        setIsDark(isDarkMode);
     }, []);
 
     const toggleTheme = () => {
-        const newTheme = isDark ? 'light' : 'dark';
-        setIsDark(!isDark);
-        localStorage.setItem('theme', newTheme);
+        const html = document.documentElement;
+        const currentIsDark = html.classList.contains('dark');
+        const newTheme = currentIsDark ? 'light' : 'dark';
 
+        // Update DOM
         if (newTheme === 'dark') {
-            document.documentElement.classList.add('dark');
+            html.classList.add('dark');
         } else {
-            document.documentElement.classList.remove('dark');
+            html.classList.remove('dark');
         }
+
+        // Update state and localStorage
+        setIsDark(!currentIsDark);
+        localStorage.setItem('theme', newTheme);
     };
 
     return (
