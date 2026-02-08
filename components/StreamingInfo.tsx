@@ -9,8 +9,8 @@ export async function StreamingInfo({ imdbID }: { imdbID: string }) {
   const countriesData = data?.countries || [];
 
   return (
-    <div className="mt-8 pt-8 border-t border-white/10 animate-in slide-in-from-bottom-4 duration-700 delay-300 fill-mode-backwards">
-      <h3 className="font-semibold text-xl mb-6 text-white">Streaming Availability</h3>
+    <div className="mt-8 pt-8 border-t border-border animate-in slide-in-from-bottom-4 duration-700 delay-300 fill-mode-backwards">
+      <h3 className="font-semibold text-xl mb-6 text-foreground">Streaming Availability</h3>
       {(!data || Object.keys(streamingInfo).length === 0) ? (
         <div className="p-6 rounded-xl bg-white/5 border border-white/10 text-center text-muted-foreground">
           No streaming data available for this title.
