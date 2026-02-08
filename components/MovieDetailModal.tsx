@@ -24,7 +24,9 @@ export function MovieDetailModal({
 	movie,
 }: MovieDetailModalProps) {
 	const [details, setDetails] = useState<MovieDetails | null>(null);
-	const [streaming, setStreaming] = useState<StreamingInfo>({ streamingInfo: {} });
+	const [streaming, setStreaming] = useState<StreamingAvailabilityResponse>({
+		streamingInfo: {},
+	});
 	const [loading, setLoading] = useState(false);
 
 	useEffect(() => {
