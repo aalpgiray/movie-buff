@@ -55,7 +55,7 @@ export function Header({ watchlistCount, watchedCount }: HeaderProps) {
                     <nav className="flex items-center gap-3">
                         <Link
                             href="/watchlist"
-                            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-sm font-medium transition-all hover:scale-105"
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary hover:bg-secondary/80 border border-border text-sm font-medium text-secondary-foreground transition-all hover:scale-105"
                         >
                             <Bookmark className="h-4 w-4 text-amber-500" />
                             <span className="hidden sm:inline">Watchlist</span>
@@ -67,7 +67,7 @@ export function Header({ watchlistCount, watchedCount }: HeaderProps) {
                         </Link>
                         <Link
                             href="/watched"
-                            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-sm font-medium transition-all hover:scale-105"
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary hover:bg-secondary/80 border border-border text-sm font-medium text-secondary-foreground transition-all hover:scale-105"
                         >
                             <Eye className="h-4 w-4 text-green-500" />
                             <span className="hidden sm:inline">Watched</span>
@@ -77,6 +77,19 @@ export function Header({ watchlistCount, watchedCount }: HeaderProps) {
                                 </span>
                             )}
                         </Link>
+                        {mounted && (
+                            <button
+                                onClick={toggleTheme}
+                                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary hover:bg-secondary/80 border border-border text-sm font-medium text-secondary-foreground transition-all hover:scale-105"
+                                title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+                            >
+                                {isDark ? (
+                                    <Sun className="h-4 w-4" />
+                                ) : (
+                                    <Moon className="h-4 w-4" />
+                                )}
+                            </button>
+                        )}
                     </nav>
                 </div>
             </div>
