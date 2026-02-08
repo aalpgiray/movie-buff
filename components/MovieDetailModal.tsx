@@ -9,7 +9,7 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { AvailabilityMatrix } from "./AvailabilityMatrix";
-import type { Movie } from "@/lib/types";
+import type { Movie, StreamingOption, CountryMetadata } from "@/lib/types";
 
 interface MovieDetails {
 	Rated?: string;
@@ -21,7 +21,8 @@ interface MovieDetails {
 }
 
 interface StreamingInfo {
-	streamingInfo?: Record<string, unknown>;
+	streamingInfo: Record<string, StreamingOption[]>;
+	countries?: CountryMetadata[];
 }
 
 interface MovieDetailModalProps {
@@ -36,7 +37,7 @@ export function MovieDetailModal({
 	movie,
 }: MovieDetailModalProps) {
 	const [details, setDetails] = useState<MovieDetails | null>(null);
-	const [streaming, setStreaming] = useState<StreamingInfo | null>(null);
+	const [streaming, setStreaming] = useState<StreamingInfo>({ streamingInfo: {} });
 	const [loading, setLoading] = useState(false);
 
 	useEffect(() => {
@@ -114,7 +115,10 @@ export function MovieDetailModal({
 							{loading ? (
 								<div className="animate-pulse h-32 bg-muted/20 rounded-lg" />
 							) : (
-								<AvailabilityMatrix availability={streaming?.streamingInfo} />
+								<AvailabilityMatrix
+									availability={streaming.streamingInfo}
+									countriesMetadata={streaming.countries}
+								/>
 							)}
 						</div>
 

@@ -39,3 +39,15 @@ export interface MovieRecommendation {
   title: string;
   reason: string;
 }
+
+export interface StreamingOption {
+  service: { id: string; name: string };
+  link: string;
+  type: string; // 'subscription' | 'rent' | 'buy' | 'free' | 'addon'
+}
+
+export interface CountryMetadata {
+  countryCode: string;
+  name: string;
+  flagEmoji: string;
+}
