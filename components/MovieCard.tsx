@@ -89,7 +89,7 @@ export function MovieCard({ movie, onToggleSeen, isSeen, onToggleWatchlist, isIn
 						"p-2 rounded-full backdrop-blur-md transition-all",
 						isSeen
 							? "bg-green-500 text-white shadow-lg shadow-green-500/50"
-							: "bg-black/50 text-white hover:bg-black/70"
+							: "bg-black/40 text-white hover:bg-black/60"
 					)}
 					title={isSeen ? "Mark as unwatched" : "Mark as watched"}
 				>
