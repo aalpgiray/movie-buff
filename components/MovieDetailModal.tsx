@@ -6,15 +6,28 @@ import { useEffect, useState } from "react";
 import {
 	Dialog,
 	DialogContent,
-	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { AvailabilityMatrix } from "./AvailabilityMatrix";
+import type { Movie } from "@/lib/types";
+
+interface MovieDetails {
+	Rated?: string;
+	Runtime?: string;
+	Plot?: string;
+	imdbRating?: string;
+	Director?: string;
+	Actors?: string;
+}
+
+interface StreamingInfo {
+	streamingInfo?: Record<string, unknown>;
+}
 
 interface MovieDetailModalProps {
 	isOpen: boolean;
 	onClose: () => void;
-	movie: any; // OMDb movie object
+	movie: Movie;
 }
 
 export function MovieDetailModal({
@@ -22,25 +35,36 @@ export function MovieDetailModal({
 	onClose,
 	movie,
 }: MovieDetailModalProps) {
-	const [details, setDetails] = useState<any>(null);
-	const [streaming, setStreaming] = useState<any>(null);
+	const [details, setDetails] = useState<MovieDetails | null>(null);
+	const [streaming, setStreaming] = useState<StreamingInfo | null>(null);
 	const [loading, setLoading] = useState(false);
 
 	useEffect(() => {
 		if (isOpen && movie) {
-			setLoading(true);
-      setDetails(null);
-      setStreaming(null);
-			// Fetch full details and streaming info
-			// We'll create a new API route for this to keep secrets on server
-			fetch(`/api/movie/${movie.imdbID}`)
-				.then((res) => res.json())
-				.then((data) => {
-					setDetails(data.details);
-					setStreaming(data.streaming);
-				})
-				.catch((err) => console.error(err))
-				.finally(() => setLoading(false));
+			let isMounted = true;
+
+			const fetchData = async () => {
+				if (isMounted) setLoading(true);
+
+				try {
+					const res = await fetch(`/api/movie/${movie.imdbID}`);
+					const data = await res.json();
+					if (isMounted) {
+						setDetails(data.details);
+						setStreaming(data.streaming);
+					}
+				} catch (err) {
+					console.error(err);
+				} finally {
+					if (isMounted) setLoading(false);
+				}
+			};
+
+			fetchData();
+
+			return () => {
+				isMounted = false;
+			};
 		}
 	}, [isOpen, movie]);
 

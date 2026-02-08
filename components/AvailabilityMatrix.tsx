@@ -367,7 +367,7 @@ export function AvailabilityMatrix({
 	}, [availability, userCountry]);
 
 	// Initialize selected platforms with top 5 or all if fewer
-	useMemo(() => {
+	useEffect(() => {
 		if (selectedPlatforms.length === 0 && allPlatforms.length > 0) {
 			const defaults = ["netflix", "prime", "disney", "hbo", "apple"];
 			const initial = allPlatforms
@@ -381,7 +381,7 @@ export function AvailabilityMatrix({
 				setSelectedPlatforms(initial);
 			}
 		}
-	}, [allPlatforms, selectedPlatforms.length]);
+	}, [allPlatforms]);
 
 	if (!availability || Object.keys(availability).length === 0) {
 		return (

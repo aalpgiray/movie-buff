@@ -95,7 +95,7 @@ export default function WatchedMoviesPage() {
                 ) : watchedMovies.length === 0 ? (
                     <div className="text-center py-20">
                         <p className="text-muted-foreground text-lg mb-4">
-                            You haven't marked any movies as watched yet.
+                            You haven&apos;t marked any movies as watched yet.
                         </p>
                         <Link
                             href="/"

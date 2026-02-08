@@ -168,7 +168,7 @@ export default function Home() {
 					>
 						<div className="text-center space-y-6">
 							<h2 className="text-5xl md:text-7xl font-bold tracking-tighter bg-clip-text text-transparent bg-gradient-to-b from-foreground to-foreground/60">
-								How are you feeling?
+								How are you feeling&apos;?
 							</h2>
 							<p className="text-xl text-muted-foreground max-w-2xl mx-auto">
 								Describe your mood, and we'll find the perfect movies to match.

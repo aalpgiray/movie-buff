@@ -4,10 +4,9 @@ import { Play, ExternalLink } from "lucide-react";
 
 interface TrailerPlayerProps {
     videoKey: string;
-    title: string;
 }
 
-export function TrailerPlayer({ videoKey, title }: TrailerPlayerProps) {
+export function TrailerPlayer({ videoKey }: TrailerPlayerProps) {
     const youtubeUrl = `https://www.youtube.com/watch?v=${videoKey}`;
 
     return (
