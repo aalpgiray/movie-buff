@@ -445,7 +445,7 @@ export function AvailabilityMatrix({
 			</div>
 
 			{/* Matrix */}
-			<div className="overflow-x-auto rounded-xl border border-white/10 bg-black/20 max-h-[500px] relative">
+			<div className="overflow-x-auto rounded-xl border border-border bg-secondary max-h-[500px] relative">
 				<table className="w-full text-sm text-left border-collapse">
 					<thead className="sticky top-0 z-10 bg-[#0a0a0a] shadow-sm shadow-white/5">
 						<tr className="border-b border-white/10">
@@ -457,7 +457,7 @@ export function AvailabilityMatrix({
 								return (
 									<th
 										key={platformId}
-										className="p-4 font-medium text-center min-w-[120px] bg-[#0a0a0a]"
+										className="p-4 font-medium text-center min-w-[120px] bg-card text-card-foreground"
 									>
 										{platform?.name}
 									</th>
@@ -465,7 +465,7 @@ export function AvailabilityMatrix({
 							})}
 						</tr>
 					</thead>
-					<tbody className="divide-y divide-white/5">
+					<tbody className="divide-y divide-border">
 						{allCountries.map((countryCode) => {
 							// Use API metadata if available, fallback to code
 							const countryInfo = countryLookup.get(countryCode) || {
@@ -508,14 +508,14 @@ export function AvailabilityMatrix({
 														href={options[0].link}
 														target="_blank"
 														rel="noopener noreferrer"
-														className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/10 hover:bg-primary hover:text-white transition-all group text-xs"
+														className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-primary/20 hover:bg-primary hover:text-primary-foreground transition-all group text-xs text-primary"
 														title={`Watch on ${allPlatforms.find((p) => p.id === platformId)?.name}`}
 													>
 														<span className="font-medium">{formatTypes(options)}</span>
 														<ExternalLink className="h-3 w-3 opacity-70 group-hover:opacity-100" />
 													</a>
 												) : (
-													<span className="text-muted-foreground/20 block">
+													<span className="text-muted-foreground/40 block">
 														•
 													</span>
 												)}
