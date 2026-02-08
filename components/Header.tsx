@@ -56,7 +56,7 @@ export function Header({ watchlistCount, watchedCount }: HeaderProps) {
                             </div>
                         </div>
                         <div>
-                            <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-white/60">
+                            <h1 className="text-xl font-bold text-foreground">
                                 Mood Movie Search
                             </h1>
                             <p className="text-xs text-muted-foreground">Discover by feeling</p>
