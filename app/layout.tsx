@@ -22,14 +22,18 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               try {
-                const theme = localStorage.getItem('theme') || 'dark';
-                if (theme === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                const saved = localStorage.getItem('theme');
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                const preferredTheme = saved || (prefersDark ? 'dark' : 'light');
+
+                if (preferredTheme === 'dark') {
                   document.documentElement.classList.add('dark');
                 } else {
                   document.documentElement.classList.remove('dark');
                 }
               } catch (e) {
-                document.documentElement.classList.add('dark');
+                // Default to light mode if error
+                document.documentElement.classList.remove('dark');
               }
             `,
           }}
