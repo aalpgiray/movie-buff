@@ -2,7 +2,7 @@
 
 import { clsx } from "clsx";
 import { ExternalLink, Filter } from "lucide-react";
-import { useEffect, useMemo, useState } from "react"; // useEffect already imported
+import { useEffect, useMemo, useState } from "react";
 
 interface StreamingOption {
 	service: { id: string; name: string };
