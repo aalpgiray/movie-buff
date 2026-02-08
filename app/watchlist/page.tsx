@@ -93,7 +93,7 @@ export default function WatchlistPage() {
                         {[...Array(8)].map((_, i) => (
                             <div
                                 key={i}
-                                className="aspect-[2/3] rounded-xl bg-white/5 animate-pulse"
+                                className="aspect-[2/3] rounded-xl bg-secondary animate-pulse"
                             />
                         ))}
                     </div>
