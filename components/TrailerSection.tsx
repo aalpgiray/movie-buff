@@ -11,5 +11,5 @@ export async function TrailerSection({ imdbID }: { imdbID: string }) {
         return null;
     }
 
-    return <TrailerPlayer videoKey={mainTrailer.key} title={mainTrailer.name} />;
+    return <TrailerPlayer videoKey={mainTrailer.key} />;
 }
