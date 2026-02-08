@@ -5,14 +5,7 @@ import { Eye, Star, Bookmark } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-
-interface Movie {
-	Title: string;
-	Year: string;
-	imdbID: string;
-	Type: string;
-	Poster: string;
-}
+import type { Movie } from "@/lib/types";
 
 interface MovieCardProps {
 	movie: Movie;
