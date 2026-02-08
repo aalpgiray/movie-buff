@@ -14,27 +14,46 @@ export function Header({ watchlistCount, watchedCount }: HeaderProps) {
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
+        // Set mounted flag
         setMounted(true);
-        // Sync state with current DOM state
+
+        // Read current theme from DOM
         const isDarkMode = document.documentElement.classList.contains('dark');
         setIsDark(isDarkMode);
+
+        // Listen for changes from other tabs/windows
+        const handleStorageChange = (e: StorageEvent) => {
+            if (e.key === 'theme') {
+                const newTheme = e.newValue === 'dark';
+                setIsDark(newTheme);
+                if (newTheme) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            }
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+        return () => window.removeEventListener('storage', handleStorageChange);
     }, []);
 
     const toggleTheme = () => {
         const html = document.documentElement;
-        const currentIsDark = html.classList.contains('dark');
-        const newTheme = currentIsDark ? 'light' : 'dark';
+        const newIsDark = !isDark;
+
+        // Update state first
+        setIsDark(newIsDark);
 
         // Update DOM
-        if (newTheme === 'dark') {
+        if (newIsDark) {
             html.classList.add('dark');
         } else {
             html.classList.remove('dark');
         }
 
-        // Update state and localStorage
-        setIsDark(!currentIsDark);
-        localStorage.setItem('theme', newTheme);
+        // Save to localStorage
+        localStorage.setItem('theme', newIsDark ? 'dark' : 'light');
     };
 
     return (
