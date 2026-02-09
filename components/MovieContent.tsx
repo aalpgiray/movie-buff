@@ -3,6 +3,7 @@ import { MovieDetail } from "@/components/MovieDetail";
 import { SimilarMoviesSection } from "@/components/SimilarMoviesSection";
 import { StreamingInfo } from "@/components/StreamingInfo";
 import { TrailerSection } from "@/components/TrailerSection";
+import { getMovieDetails } from "@/lib/omdb";
 
 interface MovieContentProps {
     params: Promise<{ id: string }>;
