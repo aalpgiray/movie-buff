@@ -30,23 +30,29 @@ export function SimilarMovies({
 		const fetchMovies = async () => {
 			try {
 				setLoading(true);
+				console.log("SimilarMovies: Starting to fetch", recommendations.length, "recommendations");
 				const moviesList: Array<Movie & { reason: string }> = [];
 
 				for (const rec of recommendations) {
 					try {
+						console.log("SimilarMovies: Searching for", rec.title);
 						const response = await searchMovies(rec.title);
 						if (response.Search && response.Search.length > 0) {
 							const movie = response.Search[0];
+							console.log("SimilarMovies: Found", movie.Title);
 							moviesList.push({
 								...movie,
 								reason: rec.reason,
 							});
+						} else {
+							console.log("SimilarMovies: No results for", rec.title);
 						}
 					} catch (error) {
 						console.error(`Failed to fetch ${rec.title}:`, error);
 					}
 				}
 
+				console.log("SimilarMovies: Final count", moviesList.length);
 				setMovies(moviesList);
 			} catch (error) {
 				console.error("Error fetching similar movies:", error);
@@ -57,6 +63,8 @@ export function SimilarMovies({
 
 		if (recommendations.length > 0) {
 			fetchMovies();
+		} else {
+			console.log("SimilarMovies: No recommendations provided");
 		}
 	}, [recommendations]);
 
