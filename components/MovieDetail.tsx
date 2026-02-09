@@ -15,12 +15,14 @@ export async function MovieDetail({ imdbID }: { imdbID: string }) {
   let similarMovieRecommendations = [];
   try {
     if (movie.Genre && movie.imdbRating && movie.Plot) {
+      console.log("Fetching similar movies for:", movie.Title);
       similarMovieRecommendations = await getSimilarMovies(
         movie.Title,
         movie.Genre,
         movie.imdbRating,
         movie.Plot
       );
+      console.log("Similar movies found:", similarMovieRecommendations.length);
     }
   } catch (error) {
     console.error("Failed to fetch similar movies:", error);
