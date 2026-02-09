@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { MovieDetail } from "@/components/MovieDetail";
+import { SimilarMoviesSection } from "@/components/SimilarMoviesSection";
 import { StreamingInfo } from "@/components/StreamingInfo";
 import { TrailerSection } from "@/components/TrailerSection";
 
@@ -13,6 +14,26 @@ export async function MovieContent({ params }: MovieContentProps) {
     return (
         <>
             <MovieDetail imdbID={id} />
+
+            <Suspense
+                fallback={
+                    <div className="mt-12 pt-8 border-t border-border">
+                        <h2 className="font-semibold text-2xl mb-6 text-foreground">
+                            Similar Movies
+                        </h2>
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                            {[...Array(6)].map((_, i) => (
+                                <div
+                                    key={i}
+                                    className="aspect-[2/3] rounded-lg bg-secondary animate-pulse"
+                                />
+                            ))}
+                        </div>
+                    </div>
+                }
+            >
+                <SimilarMoviesContent imdbID={id} />
+            </Suspense>
 
             <Suspense
                 fallback={
