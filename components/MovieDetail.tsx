@@ -99,13 +99,7 @@ export async function MovieDetail({ imdbID }: { imdbID: string }) {
         </div>
       </div>
 
-      <SimilarMovies
-        movieTitle={movie.Title}
-        genre={movie.Genre || ""}
-        rating={movie.imdbRating || "N/A"}
-        plot={movie.Plot || ""}
-        recommendations={similarMovieRecommendations}
-      />
+      <SimilarMoviesList movies={similarMovies} />
     </>
   );
 }
