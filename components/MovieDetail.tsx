@@ -1,6 +1,8 @@
 import { Star } from "lucide-react";
 import Image from "next/image";
 import { getMovieDetails } from "@/lib/omdb";
+import { getSimilarMovies } from "@/lib/openai";
+import { SimilarMovies } from "@/components/SimilarMovies";
 
 export async function MovieDetail({ imdbID }: { imdbID: string }) {
   const movie = await getMovieDetails(imdbID);
