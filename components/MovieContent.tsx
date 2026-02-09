@@ -71,3 +71,20 @@ export async function MovieContent({ params }: MovieContentProps) {
         </>
     );
 }
+
+async function SimilarMoviesWrapper({ imdbID }: { imdbID: string }) {
+    const movie = await getMovieDetails(imdbID);
+
+    if (!movie || !movie.Genre || !movie.imdbRating || !movie.Plot) {
+        return null;
+    }
+
+    return (
+        <SimilarMoviesSection
+            movieTitle={movie.Title}
+            genre={movie.Genre}
+            rating={movie.imdbRating}
+            plot={movie.Plot}
+        />
+    );
+}
