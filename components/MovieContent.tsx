@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { MovieDetail } from "@/components/MovieDetail";
+import { MovieDetailSkeleton } from "@/components/MovieDetailSkeleton";
 import { SimilarMoviesSection } from "@/components/SimilarMoviesSection";
 import { StreamingInfo } from "@/components/StreamingInfo";
 import { TrailerSection } from "@/components/TrailerSection";
@@ -14,7 +15,9 @@ export async function MovieContent({ params }: MovieContentProps) {
 
     return (
         <>
-            <MovieDetail imdbID={id} />
+            <Suspense fallback={<MovieDetailSkeleton />}>
+                <MovieDetail imdbID={id} />
+            </Suspense>
 
             <Suspense
                 fallback={
