@@ -1,8 +1,23 @@
 import { Star } from "lucide-react";
 import Image from "next/image";
 import { getMovieDetails } from "@/lib/omdb";
+import { MovieDetailActions } from "@/components/MovieDetailActions";
 
-export async function MovieDetail({ imdbID }: { imdbID: string }) {
+interface MovieDetailProps {
+  imdbID: string;
+  isSeen?: boolean;
+  isInWatchlist?: boolean;
+  onToggleSeen?: (id: string) => void;
+  onToggleWatchlist?: (id: string) => void;
+}
+
+export async function MovieDetail({
+  imdbID,
+  isSeen = false,
+  isInWatchlist = false,
+  onToggleSeen,
+  onToggleWatchlist,
+}: MovieDetailProps) {
   const movie = await getMovieDetails(imdbID);
 
   if (!movie) {
