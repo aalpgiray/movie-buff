@@ -4,7 +4,6 @@ const OMDB_API_KEY = process.env.OMDB_API_KEY;
 const BASE_URL = "http://www.omdbapi.com/";
 
 export async function searchMovies(query: string): Promise<OmdbSearchResponse> {
-	"use cache"
 	if (!OMDB_API_KEY) {
 		console.warn("OMDB_API_KEY is not set.");
 		return { Search: [], Response: "False" };
