@@ -45,12 +45,21 @@ export async function MovieDetail({
             <h1 className="text-4xl md:text-5xl font-bold my-6 tracking-tight text-foreground">
               {movie.Title}
             </h1>
-            <div className="flex flex-wrap items-center justify-start gap-4 text-sm">
+            <div className="flex flex-wrap items-center justify-start gap-4 text-sm mb-4">
               <span className="px-2 py-1 rounded-md bg-secondary border border-border text-secondary-foreground">{movie.Year}</span>
               <span className="px-2 py-1 rounded-md bg-secondary border border-border text-secondary-foreground">{movie.Rated}</span>
               <span className="px-2 py-1 rounded-md bg-secondary border border-border text-secondary-foreground">{movie.Runtime}</span>
               <span className="px-2 py-1 rounded-md bg-secondary border border-border text-secondary-foreground">{movie.Genre}</span>
             </div>
+            {onToggleSeen && onToggleWatchlist && (
+              <MovieDetailActions
+                imdbID={movie.imdbID}
+                isSeen={isSeen}
+                isInWatchlist={isInWatchlist}
+                onToggleSeen={onToggleSeen}
+                onToggleWatchlist={onToggleWatchlist}
+              />
+            )}
           </div>
 
           <div className="flex items-center gap-3">
