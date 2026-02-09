@@ -32,7 +32,7 @@ export async function MovieContent({ params }: MovieContentProps) {
                     </div>
                 }
             >
-                <SimilarMoviesContent imdbID={id} />
+                <SimilarMoviesWrapper imdbID={id} />
             </Suspense>
 
             <Suspense
