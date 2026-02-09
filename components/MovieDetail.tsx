@@ -62,8 +62,6 @@ export async function MovieDetail({ imdbID }: { imdbID: string }) {
           </div>
         </div>
       </div>
-
-      <SimilarMoviesList movies={similarMovies} />
     </>
   );
 }
