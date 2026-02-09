@@ -1,8 +1,9 @@
 import { Star } from "lucide-react";
 import Image from "next/image";
-import { getMovieDetails } from "@/lib/omdb";
+import { getMovieDetails, searchMovies } from "@/lib/omdb";
 import { getSimilarMovies } from "@/lib/openai";
-import { SimilarMovies } from "@/components/SimilarMovies";
+import { SimilarMoviesList } from "@/components/SimilarMoviesList";
+import type { Movie } from "@/lib/types";
 
 export async function MovieDetail({ imdbID }: { imdbID: string }) {
   const movie = await getMovieDetails(imdbID);
@@ -11,16 +12,34 @@ export async function MovieDetail({ imdbID }: { imdbID: string }) {
     return <div className="text-center text-muted-foreground">Movie details not found.</div>;
   }
 
-  // Fetch similar movie recommendations
-  let similarMovieRecommendations = [];
+  // Fetch similar movie recommendations and actual movies
+  let similarMovies: Array<Movie & { reason: string }> = [];
   try {
     if (movie.Genre && movie.imdbRating && movie.Plot) {
-      similarMovieRecommendations = await getSimilarMovies(
+      const recommendations = await getSimilarMovies(
         movie.Title,
         movie.Genre,
         movie.imdbRating,
         movie.Plot
       );
+
+      // Search OMDB for each recommendation
+      const moviePromises = recommendations.map(async (rec) => {
+        try {
+          const data = await searchMovies(rec.title);
+          if (data.Search && data.Search.length > 0) {
+            const foundMovie = data.Search[0];
+            return { ...foundMovie, reason: rec.reason };
+          }
+          return null;
+        } catch (error) {
+          console.error(`Error searching for ${rec.title}:`, error);
+          return null;
+        }
+      });
+
+      const results = await Promise.all(moviePromises);
+      similarMovies = results.filter((m): m is (Movie & { reason: string }) => m !== null);
     }
   } catch (error) {
     console.error("Failed to fetch similar movies:", error);
