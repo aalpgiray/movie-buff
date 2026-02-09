@@ -134,8 +134,17 @@ export async function getSimilarMovies(
 	plot: string,
 ): Promise<MovieRecommendation[]> {
 	if (!process.env.OPENAI_API_KEY) {
-		console.warn("OPENAI_API_KEY is not set.");
-		return [];
+		console.warn("OPENAI_API_KEY is not set. Using fallback similar movies by genre.");
+		// Fallback: return genre-based search queries when API key is missing
+		const primaryGenre = genre.split(",")[0].trim();
+		return [
+			{ title: `${primaryGenre} movies`, reason: "Same genre" },
+			{ title: `Best ${primaryGenre}`, reason: "Highly rated in genre" },
+			{ title: `${primaryGenre} films 2020s`, reason: "Modern similar films" },
+			{ title: `${primaryGenre} classics`, reason: "Classic films in genre" },
+			{ title: `${primaryGenre} masterpieces`, reason: "Acclaimed similar movies" },
+			{ title: `Top ${primaryGenre}`, reason: "Popular in this genre" },
+		];
 	}
 
 	try {
