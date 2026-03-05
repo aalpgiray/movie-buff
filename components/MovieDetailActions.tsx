@@ -2,26 +2,45 @@
 
 import { Eye, Bookmark } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useState, useEffect } from "react";
 
 interface MovieDetailActionsProps {
   imdbID: string;
-  isSeen: boolean;
-  isInWatchlist: boolean;
-  onToggleSeen: (id: string) => void;
-  onToggleWatchlist: (id: string) => void;
 }
 
-export function MovieDetailActions({
-  imdbID,
-  isSeen,
-  isInWatchlist,
-  onToggleSeen,
-  onToggleWatchlist,
-}: MovieDetailActionsProps) {
+export function MovieDetailActions({ imdbID }: MovieDetailActionsProps) {
+  const [isSeen, setIsSeen] = useState(false);
+  const [isInWatchlist, setIsInWatchlist] = useState(false);
+
+  useEffect(() => {
+    const seen: string[] = JSON.parse(localStorage.getItem("seenMovies") || "[]");
+    const watchlist: string[] = JSON.parse(localStorage.getItem("watchlistMovies") || "[]");
+    setIsSeen(seen.includes(imdbID));
+    setIsInWatchlist(watchlist.includes(imdbID));
+  }, [imdbID]);
+
+  const toggleSeen = () => {
+    const seen: string[] = JSON.parse(localStorage.getItem("seenMovies") || "[]");
+    const next = seen.includes(imdbID)
+      ? seen.filter((id) => id !== imdbID)
+      : [...seen, imdbID];
+    localStorage.setItem("seenMovies", JSON.stringify(next));
+    setIsSeen(next.includes(imdbID));
+  };
+
+  const toggleWatchlist = () => {
+    const watchlist: string[] = JSON.parse(localStorage.getItem("watchlistMovies") || "[]");
+    const next = watchlist.includes(imdbID)
+      ? watchlist.filter((id) => id !== imdbID)
+      : [...watchlist, imdbID];
+    localStorage.setItem("watchlistMovies", JSON.stringify(next));
+    setIsInWatchlist(next.includes(imdbID));
+  };
+
   return (
-    <div className="flex gap-3">
+    <div className="flex gap-3 mt-4">
       <button
-        onClick={() => onToggleWatchlist(imdbID)}
+        onClick={toggleWatchlist}
         className={cn(
           "inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-all font-medium",
           isInWatchlist
@@ -30,14 +49,12 @@ export function MovieDetailActions({
         )}
         title={isInWatchlist ? "Remove from watchlist" : "Add to watchlist"}
       >
-        <Bookmark
-          className={cn("h-4 w-4", isInWatchlist && "fill-current")}
-        />
+        <Bookmark className={cn("h-4 w-4", isInWatchlist && "fill-current")} />
         {isInWatchlist ? "In Watchlist" : "Add to Watchlist"}
       </button>
 
       <button
-        onClick={() => onToggleSeen(imdbID)}
+        onClick={toggleSeen}
         className={cn(
           "inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-all font-medium",
           isSeen
@@ -46,9 +63,7 @@ export function MovieDetailActions({
         )}
         title={isSeen ? "Mark as unwatched" : "Mark as watched"}
       >
-        <Eye
-          className={cn("h-4 w-4", isSeen && "fill-current")}
-        />
+        <Eye className={cn("h-4 w-4", isSeen && "fill-current")} />
         {isSeen ? "Watched" : "Mark as Watched"}
       </button>
     </div>
