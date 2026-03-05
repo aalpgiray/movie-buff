@@ -1,3 +1,5 @@
+"use client";
+
 import { Suspense } from "react";
 import { MovieDetail } from "@/components/MovieDetail";
 import { MovieDetailSkeleton } from "@/components/MovieDetailSkeleton";
@@ -5,20 +7,34 @@ import { SimilarMoviesSection } from "@/components/SimilarMoviesSection";
 import { StreamingInfo } from "@/components/StreamingInfo";
 import { TrailerSection } from "@/components/TrailerSection";
 import { getMovieDetails } from "@/lib/omdb";
+import { useEffect, useState } from "react";
 
 interface MovieContentProps {
     params: Promise<{ id: string }>;
 }
 
-export async function MovieContent({ params }: MovieContentProps) {
-    const { id } = await params;
-    const movie = await getMovieDetails(id);
+export function MovieContent({ params }: MovieContentProps) {
+    const [id, setId] = useState<string | null>(null);
+    const [movie, setMovie] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        (async () => {
+            const { id: movieId } = await params;
+            setId(movieId);
+            const movieData = await getMovieDetails(movieId);
+            setMovie(movieData);
+            setLoading(false);
+        })();
+    }, [params]);
+
+    if (loading || !id) {
+        return <MovieDetailSkeleton />;
+    }
 
     return (
         <>
-            <Suspense fallback={<MovieDetailSkeleton />}>
-                <MovieDetail imdbID={id} />
-            </Suspense>
+            <MovieDetail imdbID={id} />
 
             {movie && movie.Genre && movie.imdbRating && movie.Plot && (
                 <Suspense
