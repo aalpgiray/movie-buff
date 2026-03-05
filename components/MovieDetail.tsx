@@ -30,7 +30,7 @@ export async function MovieDetail({
         <div className="relative aspect-[2/3] w-full rounded-xl overflow-hidden shadow-2xl border border-border">
           {movie.Poster !== "N/A" && (
             <Image
-              src={movie.Poster}
+              src={movie.Poster.replace(/^http:\/\//, "https://")}
               alt={movie.Title}
               fill
               className="object-cover"

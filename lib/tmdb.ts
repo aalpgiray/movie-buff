@@ -36,6 +36,7 @@ export async function getMovieDetails(id: number) {
 }
 
 export async function getMovieTrailers(imdbId: string): Promise<TMDbVideo[]> {
+  "use cache"
   if (!TMDB_READ_ACCESS_TOKEN) {
     console.warn("TMDB_READ_ACCESS_TOKEN is not set.");
     return [];
