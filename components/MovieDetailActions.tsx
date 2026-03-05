@@ -6,9 +6,13 @@ import { useState, useEffect } from "react";
 
 interface MovieDetailActionsProps {
   imdbID: string;
+  title: string;
+  year: string;
+  poster: string;
+  type: string;
 }
 
-export function MovieDetailActions({ imdbID }: MovieDetailActionsProps) {
+export function MovieDetailActions({ imdbID, title, year, poster, type }: MovieDetailActionsProps) {
   const [isSeen, setIsSeen] = useState(false);
   const [isInWatchlist, setIsInWatchlist] = useState(false);
   const [seenFeedback, setSeenFeedback] = useState(false);
@@ -26,24 +30,30 @@ export function MovieDetailActions({ imdbID }: MovieDetailActionsProps) {
     setTimeout(() => setter(false), 1500);
   };
 
+  const saveDetails = (detailsKey: string) => {
+    const details = JSON.parse(localStorage.getItem(detailsKey) || "{}");
+    details[imdbID] = { title, year, poster, type };
+    localStorage.setItem(detailsKey, JSON.stringify(details));
+  };
+
   const toggleSeen = () => {
     const seen: string[] = JSON.parse(localStorage.getItem("seenMovies") || "[]");
-    const next = seen.includes(imdbID)
-      ? seen.filter((id) => id !== imdbID)
-      : [...seen, imdbID];
+    const adding = !seen.includes(imdbID);
+    const next = adding ? [...seen, imdbID] : seen.filter((id) => id !== imdbID);
     localStorage.setItem("seenMovies", JSON.stringify(next));
-    setIsSeen(next.includes(imdbID));
+    if (adding) saveDetails("seenMoviesDetails");
+    setIsSeen(adding);
     flash(setSeenFeedback);
     window.dispatchEvent(new Event("listsUpdated"));
   };
 
   const toggleWatchlist = () => {
     const watchlist: string[] = JSON.parse(localStorage.getItem("watchlistMovies") || "[]");
-    const next = watchlist.includes(imdbID)
-      ? watchlist.filter((id) => id !== imdbID)
-      : [...watchlist, imdbID];
+    const adding = !watchlist.includes(imdbID);
+    const next = adding ? [...watchlist, imdbID] : watchlist.filter((id) => id !== imdbID);
     localStorage.setItem("watchlistMovies", JSON.stringify(next));
-    setIsInWatchlist(next.includes(imdbID));
+    if (adding) saveDetails("watchlistMoviesDetails");
+    setIsInWatchlist(adding);
     flash(setWatchlistFeedback);
     window.dispatchEvent(new Event("listsUpdated"));
   };

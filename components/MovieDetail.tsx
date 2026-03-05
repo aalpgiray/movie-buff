@@ -48,7 +48,13 @@ export async function MovieDetail({ imdbID }: MovieDetailProps) {
               <span className="px-2 py-1 rounded-md bg-secondary border border-border text-secondary-foreground">{movie.Runtime}</span>
               <span className="px-2 py-1 rounded-md bg-secondary border border-border text-secondary-foreground">{movie.Genre}</span>
             </div>
-            <MovieDetailActions imdbID={movie.imdbID} />
+            <MovieDetailActions
+              imdbID={movie.imdbID}
+              title={movie.Title}
+              year={movie.Year}
+              poster={posterSrc ?? movie.Poster}
+              type={movie.Type}
+            />
           </div>
 
           <div className="flex items-center gap-3">
