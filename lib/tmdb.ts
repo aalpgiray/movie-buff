@@ -12,7 +12,6 @@ interface TMDbVideo {
 }
 
 export async function searchMovies(query: string) {
-	"use cache"
 	if (!TMDB_API_KEY) {
 		console.warn("TMDB_API_KEY is not set. Returning mock data.");
 		return { results: [] }; // Fail gracefully for now
@@ -27,7 +26,6 @@ export async function searchMovies(query: string) {
 }
 
 export async function getMovieDetails(id: number) {
-	"use cache"
 	if (!TMDB_API_KEY) return null;
 	const res = await fetch(
 		`${BASE_URL}/movie/${id}?api_key=${TMDB_API_KEY}&append_to_response=watch/providers,credits`,

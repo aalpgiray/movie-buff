@@ -11,8 +11,6 @@ export interface StreamingAvailabilityResponse {
 export async function getStreamingAvailability(
 	imdbId: string,
 ): Promise<StreamingAvailabilityResponse | null> {
-	"use cache";
-
 	if (!RAPID_API_KEY) {
 		console.warn("STREAMING_AVAILABILITY_API_KEY is not set.");
 		return null;
