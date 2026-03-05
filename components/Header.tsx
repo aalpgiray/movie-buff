@@ -2,52 +2,15 @@
 
 import { Eye, Bookmark, Film, Moon, Sun, Monitor } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useTheme } from "@/components/ThemeProvider";
 
 interface HeaderProps {
     watchlistCount: number;
     watchedCount: number;
 }
 
-type ThemeMode = 'auto' | 'light' | 'dark';
-
 export function Header({ watchlistCount, watchedCount }: HeaderProps) {
-    const [theme, setTheme] = useState<ThemeMode>('auto');
-    const [mounted, setMounted] = useState(false);
-    const [systemPrefersDark, setSystemPrefersDark] = useState(true);
-
-    useEffect(() => {
-        setMounted(true);
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        setSystemPrefersDark(prefersDark);
-        const saved = localStorage.getItem('theme') as ThemeMode | null;
-        const currentTheme = saved || 'auto';
-        setTheme(currentTheme);
-        const html = document.documentElement;
-        const isDark = currentTheme === 'dark' || (currentTheme === 'auto' && prefersDark);
-        isDark ? html.classList.add('dark') : html.classList.remove('dark');
-
-        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-        const handleChange = (e: MediaQueryListEvent) => {
-            setSystemPrefersDark(e.matches);
-            const savedTheme = localStorage.getItem('theme') || 'auto';
-            if (savedTheme === 'auto') {
-                e.matches ? document.documentElement.classList.add('dark') : document.documentElement.classList.remove('dark');
-            }
-        };
-        mediaQuery.addEventListener('change', handleChange);
-        return () => mediaQuery.removeEventListener('change', handleChange);
-    }, []);
-
-    const cycleTheme = () => {
-        const themes: ThemeMode[] = ['auto', 'light', 'dark'];
-        const nextTheme = themes[(themes.indexOf(theme) + 1) % themes.length];
-        const isDark = nextTheme === 'dark' || (nextTheme === 'auto' && systemPrefersDark);
-        isDark ? document.documentElement.classList.add('dark') : document.documentElement.classList.remove('dark');
-        setTheme(nextTheme);
-        localStorage.setItem('theme', nextTheme);
-        window.dispatchEvent(new CustomEvent('themechange', { detail: { theme: nextTheme } }));
-    };
+    const { theme, cycleTheme, mounted } = useTheme();
 
     const themeIcon = theme === 'dark' ? <Moon className="h-4 w-4" /> : theme === 'light' ? <Sun className="h-4 w-4" /> : <Monitor className="h-4 w-4" />;
 
