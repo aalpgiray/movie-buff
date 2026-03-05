@@ -42,61 +42,75 @@ export async function getMovieTrailers(imdbId: string): Promise<TMDbVideo[]> {
   }
 
   try {
-    // First, get TMDb ID from IMDb ID
-    const findUrl = `${BASE_URL}/find/${imdbId}?external_source=imdb_id`;
-    const findResponse = await fetch(findUrl, {
-      headers: {
-        Authorization: `Bearer ${TMDB_READ_ACCESS_TOKEN}`,
-        "Content-Type": "application/json",
-      },
-    });
+    // Create an AbortController with 10-second timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-    if (!findResponse.ok) {
-      console.error("TMDb Find API Error:", findResponse.status);
-      return [];
-    }
-
-    const findData = await findResponse.json();
-    const movieResults = findData.movie_results || [];
-    
-    if (movieResults.length === 0) {
-      console.warn("No TMDb movie found for IMDb ID:", imdbId);
-      return [];
-    }
-
-    const tmdbId = movieResults[0].id;
-
-    // Get videos for this movie
-    const videosUrl = `${BASE_URL}/movie/${tmdbId}/videos`;
-    const videosResponse = await fetch(videosUrl, {
-      headers: {
-        Authorization: `Bearer ${TMDB_READ_ACCESS_TOKEN}`,
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!videosResponse.ok) {
-      console.error("TMDb Videos API Error:", videosResponse.status);
-      return [];
-    }
-
-    const videosData = await videosResponse.json();
-    const videos: TMDbVideo[] = videosData.results || [];
-
-    // Filter for YouTube trailers and teasers, prioritize official
-    return videos
-      .filter(v => v.site === "YouTube" && (v.type === "Trailer" || v.type === "Teaser"))
-      .sort((a, b) => {
-        // Official trailers first
-        if (a.official && !b.official) return -1;
-        if (!a.official && b.official) return 1;
-        // Then trailers before teasers
-        if (a.type === "Trailer" && b.type === "Teaser") return -1;
-        if (a.type === "Teaser" && b.type === "Trailer") return 1;
-        return 0;
+    try {
+      // First, get TMDb ID from IMDb ID
+      const findUrl = `${BASE_URL}/find/${imdbId}?external_source=imdb_id`;
+      const findResponse = await fetch(findUrl, {
+        headers: {
+          Authorization: `Bearer ${TMDB_READ_ACCESS_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+        signal: controller.signal,
       });
+
+      if (!findResponse.ok) {
+        console.error("TMDb Find API Error:", findResponse.status);
+        return [];
+      }
+
+      const findData = await findResponse.json();
+      const movieResults = findData.movie_results || [];
+      
+      if (movieResults.length === 0) {
+        console.warn("No TMDb movie found for IMDb ID:", imdbId);
+        return [];
+      }
+
+      const tmdbId = movieResults[0].id;
+
+      // Get videos for this movie
+      const videosUrl = `${BASE_URL}/movie/${tmdbId}/videos`;
+      const videosResponse = await fetch(videosUrl, {
+        headers: {
+          Authorization: `Bearer ${TMDB_READ_ACCESS_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+        signal: controller.signal,
+      });
+
+      if (!videosResponse.ok) {
+        console.error("TMDb Videos API Error:", videosResponse.status);
+        return [];
+      }
+
+      const videosData = await videosResponse.json();
+      const videos: TMDbVideo[] = videosData.results || [];
+
+      // Filter for YouTube trailers and teasers, prioritize official
+      return videos
+        .filter(v => v.site === "YouTube" && (v.type === "Trailer" || v.type === "Teaser"))
+        .sort((a, b) => {
+          // Official trailers first
+          if (a.official && !b.official) return -1;
+          if (!a.official && b.official) return 1;
+          // Then trailers before teasers
+          if (a.type === "Trailer" && b.type === "Teaser") return -1;
+          if (a.type === "Teaser" && b.type === "Trailer") return 1;
+          return 0;
+        });
+    } finally {
+      clearTimeout(timeoutId);
+    }
   } catch (error) {
-    console.error("Error fetching TMDb data:", error);
+    if (error instanceof Error && error.name === "AbortError") {
+      console.error("TMDb request timeout: Request took too long");
+    } else {
+      console.error("Error fetching TMDb data:", error);
+    }
     return [];
   }
 }
