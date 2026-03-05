@@ -1,6 +1,6 @@
 "use client";
 
-import { Eye, Bookmark } from "lucide-react";
+import { Eye, Bookmark, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 
@@ -11,6 +11,8 @@ interface MovieDetailActionsProps {
 export function MovieDetailActions({ imdbID }: MovieDetailActionsProps) {
   const [isSeen, setIsSeen] = useState(false);
   const [isInWatchlist, setIsInWatchlist] = useState(false);
+  const [seenFeedback, setSeenFeedback] = useState(false);
+  const [watchlistFeedback, setWatchlistFeedback] = useState(false);
 
   useEffect(() => {
     const seen: string[] = JSON.parse(localStorage.getItem("seenMovies") || "[]");
@@ -19,6 +21,11 @@ export function MovieDetailActions({ imdbID }: MovieDetailActionsProps) {
     setIsInWatchlist(watchlist.includes(imdbID));
   }, [imdbID]);
 
+  const flash = (setter: (v: boolean) => void) => {
+    setter(true);
+    setTimeout(() => setter(false), 1500);
+  };
+
   const toggleSeen = () => {
     const seen: string[] = JSON.parse(localStorage.getItem("seenMovies") || "[]");
     const next = seen.includes(imdbID)
@@ -26,6 +33,8 @@ export function MovieDetailActions({ imdbID }: MovieDetailActionsProps) {
       : [...seen, imdbID];
     localStorage.setItem("seenMovies", JSON.stringify(next));
     setIsSeen(next.includes(imdbID));
+    flash(setSeenFeedback);
+    window.dispatchEvent(new Event("listsUpdated"));
   };
 
   const toggleWatchlist = () => {
@@ -35,6 +44,8 @@ export function MovieDetailActions({ imdbID }: MovieDetailActionsProps) {
       : [...watchlist, imdbID];
     localStorage.setItem("watchlistMovies", JSON.stringify(next));
     setIsInWatchlist(next.includes(imdbID));
+    flash(setWatchlistFeedback);
+    window.dispatchEvent(new Event("listsUpdated"));
   };
 
   return (
@@ -44,13 +55,19 @@ export function MovieDetailActions({ imdbID }: MovieDetailActionsProps) {
         className={cn(
           "inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-all font-medium",
           isInWatchlist
-            ? "bg-amber-500 text-white shadow-lg shadow-amber-500/50 hover:bg-amber-600"
+            ? "bg-amber-500 text-white shadow-lg shadow-amber-500/20 hover:bg-amber-600"
             : "bg-secondary border border-border text-foreground hover:bg-secondary/80"
         )}
         title={isInWatchlist ? "Remove from watchlist" : "Add to watchlist"}
       >
-        <Bookmark className={cn("h-4 w-4", isInWatchlist && "fill-current")} />
-        {isInWatchlist ? "In Watchlist" : "Add to Watchlist"}
+        {watchlistFeedback
+          ? <Check className="h-4 w-4" />
+          : <Bookmark className={cn("h-4 w-4", isInWatchlist && "fill-current")} />
+        }
+        {watchlistFeedback
+          ? (isInWatchlist ? "Added!" : "Removed!")
+          : (isInWatchlist ? "In Watchlist" : "Add to Watchlist")
+        }
       </button>
 
       <button
@@ -58,13 +75,19 @@ export function MovieDetailActions({ imdbID }: MovieDetailActionsProps) {
         className={cn(
           "inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-all font-medium",
           isSeen
-            ? "bg-green-500 text-white shadow-lg shadow-green-500/50 hover:bg-green-600"
+            ? "bg-green-500 text-white shadow-lg shadow-green-500/20 hover:bg-green-600"
             : "bg-secondary border border-border text-foreground hover:bg-secondary/80"
         )}
         title={isSeen ? "Mark as unwatched" : "Mark as watched"}
       >
-        <Eye className={cn("h-4 w-4", isSeen && "fill-current")} />
-        {isSeen ? "Watched" : "Mark as Watched"}
+        {seenFeedback
+          ? <Check className="h-4 w-4" />
+          : <Eye className={cn("h-4 w-4", isSeen && "fill-current")} />
+        }
+        {seenFeedback
+          ? (isSeen ? "Marked!" : "Removed!")
+          : (isSeen ? "Watched" : "Mark as Watched")
+        }
       </button>
     </div>
   );
