@@ -1,8 +1,5 @@
-"use client";
-
 import { Star } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useState } from "react";
 import { getMovieDetails } from "@/lib/omdb";
 import { MovieDetailActions } from "@/components/MovieDetailActions";
 
@@ -14,28 +11,14 @@ interface MovieDetailProps {
   onToggleWatchlist?: (id: string) => void;
 }
 
-export function MovieDetail({
+export async function MovieDetail({
   imdbID,
   isSeen = false,
   isInWatchlist = false,
   onToggleSeen,
   onToggleWatchlist,
 }: MovieDetailProps) {
-  const [movie, setMovie] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function loadMovie() {
-      const data = await getMovieDetails(imdbID);
-      setMovie(data);
-      setLoading(false);
-    }
-    loadMovie();
-  }, [imdbID]);
-
-  if (loading) {
-    return <div className="text-center text-muted-foreground">Loading...</div>;
-  }
+  const movie = await getMovieDetails(imdbID);
 
   if (!movie) {
     return <div className="text-center text-muted-foreground">Movie details not found.</div>;
@@ -45,7 +28,7 @@ export function MovieDetail({
     <>
       <div className="grid md:grid-cols-[300px_1fr] gap-8 animate-in fade-in duration-500">
         <div className="relative aspect-[2/3] w-full rounded-xl overflow-hidden shadow-2xl border border-border">
-          {movie.Poster !== "N/A" ? (
+          {movie.Poster !== "N/A" && (
             <Image
               src={movie.Poster}
               alt={movie.Title}
@@ -53,12 +36,7 @@ export function MovieDetail({
               className="object-cover"
               priority
               sizes="(max-width: 768px) 100vw, 300px"
-              unoptimized
             />
-          ) : (
-            <div className="w-full h-full bg-secondary flex items-center justify-center">
-              <span className="text-muted-foreground text-sm">No poster available</span>
-            </div>
           )}
         </div>
 

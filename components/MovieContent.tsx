@@ -1,5 +1,3 @@
-"use client";
-
 import { Suspense } from "react";
 import { MovieDetail } from "@/components/MovieDetail";
 import { MovieDetailSkeleton } from "@/components/MovieDetailSkeleton";
@@ -7,61 +5,39 @@ import { SimilarMoviesSection } from "@/components/SimilarMoviesSection";
 import { StreamingInfo } from "@/components/StreamingInfo";
 import { TrailerSection } from "@/components/TrailerSection";
 import { getMovieDetails } from "@/lib/omdb";
-import { useEffect, useState } from "react";
 
 interface MovieContentProps {
     params: Promise<{ id: string }>;
 }
 
-export function MovieContent({ params }: MovieContentProps) {
-    const [id, setId] = useState<string | null>(null);
-    const [movie, setMovie] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        (async () => {
-            const { id: movieId } = await params;
-            setId(movieId);
-            const movieData = await getMovieDetails(movieId);
-            setMovie(movieData);
-            setLoading(false);
-        })();
-    }, [params]);
-
-    if (loading || !id) {
-        return <MovieDetailSkeleton />;
-    }
+export async function MovieContent({ params }: MovieContentProps) {
+    const { id } = await params;
 
     return (
         <>
-            <MovieDetail imdbID={id} />
+            <Suspense fallback={<MovieDetailSkeleton />}>
+                <MovieDetail imdbID={id} />
+            </Suspense>
 
-            {movie && movie.Genre && movie.imdbRating && movie.Plot && (
-                <Suspense
-                    fallback={
-                        <div className="mt-12 pt-8 border-t border-border">
-                            <h2 className="font-semibold text-2xl mb-6 text-foreground">
-                                Similar Movies
-                            </h2>
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                                {[...Array(6)].map((_, i) => (
-                                    <div
-                                        key={i}
-                                        className="aspect-[2/3] rounded-lg bg-secondary animate-pulse"
-                                    />
-                                ))}
-                            </div>
+            <Suspense
+                fallback={
+                    <div className="mt-12 pt-8 border-t border-border">
+                        <h2 className="font-semibold text-2xl mb-6 text-foreground">
+                            Similar Movies
+                        </h2>
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                            {[...Array(6)].map((_, i) => (
+                                <div
+                                    key={i}
+                                    className="aspect-[2/3] rounded-lg bg-secondary animate-pulse"
+                                />
+                            ))}
                         </div>
-                    }
-                >
-                    <SimilarMoviesSection
-                        movieTitle={movie.Title}
-                        genre={movie.Genre}
-                        rating={movie.imdbRating}
-                        plot={movie.Plot}
-                    />
-                </Suspense>
-            )}
+                    </div>
+                }
+            >
+                <SimilarMoviesWrapper imdbID={id} />
+            </Suspense>
 
             <Suspense
                 fallback={
@@ -96,5 +72,22 @@ export function MovieContent({ params }: MovieContentProps) {
                 <StreamingInfo imdbID={id} />
             </Suspense>
         </>
+    );
+}
+
+async function SimilarMoviesWrapper({ imdbID }: { imdbID: string }) {
+    const movie = await getMovieDetails(imdbID);
+
+    if (!movie || !movie.Genre || !movie.imdbRating || !movie.Plot) {
+        return null;
+    }
+
+    return (
+        <SimilarMoviesSection
+            movieTitle={movie.Title}
+            genre={movie.Genre}
+            rating={movie.imdbRating}
+            plot={movie.Plot}
+        />
     );
 }
