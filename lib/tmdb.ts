@@ -35,6 +35,30 @@ export async function getMovieDetails(id: number) {
 	return res.json();
 }
 
+export async function getTMDbPoster(imdbId: string): Promise<string | null> {
+  "use cache"
+  if (!TMDB_READ_ACCESS_TOKEN) return null;
+
+  try {
+    const res = await fetch(
+      `${BASE_URL}/find/${imdbId}?external_source=imdb_id`,
+      {
+        headers: {
+          Authorization: `Bearer ${TMDB_READ_ACCESS_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    const movie = (data.movie_results || [])[0];
+    if (!movie?.poster_path) return null;
+    return `https://image.tmdb.org/t/p/w500${movie.poster_path}`;
+  } catch {
+    return null;
+  }
+}
+
 export async function getMovieTrailers(imdbId: string): Promise<TMDbVideo[]> {
   "use cache"
   if (!TMDB_READ_ACCESS_TOKEN) {

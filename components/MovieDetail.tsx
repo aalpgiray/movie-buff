@@ -1,6 +1,7 @@
 import { Star } from "lucide-react";
 import Image from "next/image";
 import { getMovieDetails } from "@/lib/omdb";
+import { getTMDbPoster } from "@/lib/tmdb";
 import { MovieDetailActions } from "@/components/MovieDetailActions";
 
 interface MovieDetailProps {
@@ -18,21 +19,27 @@ export async function MovieDetail({
   onToggleSeen,
   onToggleWatchlist,
 }: MovieDetailProps) {
-  const movie = await getMovieDetails(imdbID);
+  const [movie, tmdbPoster] = await Promise.all([
+    getMovieDetails(imdbID),
+    getTMDbPoster(imdbID),
+  ]);
 
   if (!movie) {
     return <div className="text-center text-muted-foreground">Movie details not found.</div>;
   }
 
+  const posterSrc = tmdbPoster ?? (movie.Poster !== "N/A" ? movie.Poster : null);
+
   return (
     <>
       <div className="grid md:grid-cols-[300px_1fr] gap-8 animate-in fade-in duration-500">
         <div className="relative aspect-[2/3] w-full rounded-xl overflow-hidden shadow-2xl border border-border">
-          {movie.Poster !== "N/A" && (
+          {posterSrc && (
             <Image
-              src={movie.Poster.replace(/^http:\/\//, "https://")}
+              src={posterSrc}
               alt={movie.Title}
               fill
+              unoptimized
               className="object-cover"
               priority
               sizes="(max-width: 768px) 100vw, 300px"
