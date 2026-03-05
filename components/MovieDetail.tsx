@@ -1,5 +1,8 @@
+"use client";
+
 import { Star } from "lucide-react";
 import Image from "next/image";
+import { useEffect, useState } from "react";
 import { getMovieDetails } from "@/lib/omdb";
 import { MovieDetailActions } from "@/components/MovieDetailActions";
 
@@ -11,14 +14,28 @@ interface MovieDetailProps {
   onToggleWatchlist?: (id: string) => void;
 }
 
-export async function MovieDetail({
+export function MovieDetail({
   imdbID,
   isSeen = false,
   isInWatchlist = false,
   onToggleSeen,
   onToggleWatchlist,
 }: MovieDetailProps) {
-  const movie = await getMovieDetails(imdbID);
+  const [movie, setMovie] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadMovie() {
+      const data = await getMovieDetails(imdbID);
+      setMovie(data);
+      setLoading(false);
+    }
+    loadMovie();
+  }, [imdbID]);
+
+  if (loading) {
+    return <div className="text-center text-muted-foreground">Loading...</div>;
+  }
 
   if (!movie) {
     return <div className="text-center text-muted-foreground">Movie details not found.</div>;
@@ -37,9 +54,6 @@ export async function MovieDetail({
               priority
               sizes="(max-width: 768px) 100vw, 300px"
               unoptimized
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-              }}
             />
           ) : (
             <div className="w-full h-full bg-secondary flex items-center justify-center">
