@@ -28,7 +28,7 @@ export async function MovieDetail({
     <>
       <div className="grid md:grid-cols-[300px_1fr] gap-8 animate-in fade-in duration-500">
         <div className="relative aspect-[2/3] w-full rounded-xl overflow-hidden shadow-2xl border border-border">
-          {movie.Poster !== "N/A" && (
+          {movie.Poster !== "N/A" ? (
             <Image
               src={movie.Poster}
               alt={movie.Title}
@@ -36,7 +36,15 @@ export async function MovieDetail({
               className="object-cover"
               priority
               sizes="(max-width: 768px) 100vw, 300px"
+              unoptimized
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }}
             />
+          ) : (
+            <div className="w-full h-full bg-secondary flex items-center justify-center">
+              <span className="text-muted-foreground text-sm">No poster available</span>
+            </div>
           )}
         </div>
 
