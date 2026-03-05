@@ -1,9 +1,7 @@
 "use client";
 
-import { Search, Sparkles } from "lucide-react";
+import { Search, Loader2 } from "lucide-react";
 import { useState } from "react";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
 
 interface SearchBarProps {
   onSearch: (query: string) => void;
@@ -16,37 +14,31 @@ export function SearchBar({ onSearch, isLoading, initialQuery = "" }: SearchBarP
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (query.trim()) {
-      onSearch(query);
-    }
+    if (query.trim()) onSearch(query.trim());
   };
 
   return (
-    <form onSubmit={handleSubmit} className="relative w-full max-w-2xl mx-auto">
-      <div className="relative flex items-center">
-        <Search className="absolute left-4 h-5 w-5 text-muted-foreground" />
-        <Input
+    <form onSubmit={handleSubmit} className="w-full">
+      <div className="relative flex items-center border border-border rounded-xl bg-card shadow-sm focus-within:border-foreground/40 focus-within:shadow-md transition-all">
+        <Search className="absolute left-4 h-5 w-5 text-muted-foreground shrink-0 pointer-events-none" />
+        <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="How are you feeling? e.g., 'I want a mind-bending sci-fi'"
-          className="h-14 rounded-full border-border/50 bg-background/50 pl-12 pr-32 text-lg backdrop-blur-xl transition-all focus:bg-background focus:ring-2 focus:ring-primary/20"
+          placeholder="Describe your mood or what you're looking for..."
+          className="flex-1 h-14 bg-transparent pl-12 pr-4 text-base text-foreground placeholder:text-muted-foreground outline-none"
         />
-        <div className="absolute right-2">
-          <Button 
-            type="submit" 
-            disabled={isLoading}
-            size="lg"
-            className="rounded-full bg-primary hover:bg-primary/90 text-primary-foreground px-6"
+        <div className="pr-2">
+          <button
+            type="submit"
+            disabled={isLoading || !query.trim()}
+            className="h-10 px-5 rounded-lg bg-foreground text-background text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-40 flex items-center gap-2"
           >
             {isLoading ? (
-              <span className="animate-pulse">Thinking...</span>
+              <><Loader2 className="h-4 w-4 animate-spin" /> Searching</>
             ) : (
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4" />
-                <span>Ask AI</span>
-              </div>
+              "Search"
             )}
-          </Button>
+          </button>
         </div>
       </div>
     </form>
