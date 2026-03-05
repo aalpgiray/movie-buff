@@ -17,14 +17,18 @@ export default function Home() {
 
 	useEffect(() => {
 		const stored = localStorage.getItem("seenMovies");
-		if (stored) {
-			setSeenMovies(JSON.parse(stored));
-		}
+		if (stored) setSeenMovies(JSON.parse(stored));
 
 		const watchlist = localStorage.getItem("watchlistMovies");
-		if (watchlist) {
-			setWatchlistMovies(JSON.parse(watchlist));
-		}
+		if (watchlist) setWatchlistMovies(JSON.parse(watchlist));
+
+		// Restore previous search results
+		const savedQuery = sessionStorage.getItem("lastQuery");
+		const savedMovies = sessionStorage.getItem("lastMovies");
+		const savedTerms = sessionStorage.getItem("lastTerms");
+		if (savedQuery) setCurrentQuery(savedQuery);
+		if (savedMovies) setMovies(JSON.parse(savedMovies));
+		if (savedTerms) setSearchTerms(JSON.parse(savedTerms));
 	}, []);
 
 	const toggleSeen = (id: string) => {
@@ -107,6 +111,9 @@ export default function Home() {
 			if (data.movies) {
 				setMovies(data.movies);
 				setSearchTerms(data.terms || []);
+				sessionStorage.setItem("lastQuery", query);
+				sessionStorage.setItem("lastMovies", JSON.stringify(data.movies));
+				sessionStorage.setItem("lastTerms", JSON.stringify(data.terms || []));
 			}
 		} catch (error) {
 			console.error("Search failed:", error);
@@ -176,7 +183,7 @@ export default function Home() {
 						</div>
 
 						<div className="w-full max-w-2xl">
-							<SearchBar onSearch={handleSearch} isLoading={loading} />
+							<SearchBar onSearch={handleSearch} isLoading={loading} initialQuery={currentQuery} />
 						</div>
 
 						<div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

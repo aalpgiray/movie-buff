@@ -8,10 +8,11 @@ import { Input } from "./ui/input";
 interface SearchBarProps {
   onSearch: (query: string) => void;
   isLoading: boolean;
+  initialQuery?: string;
 }
 
-export function SearchBar({ onSearch, isLoading }: SearchBarProps) {
-  const [query, setQuery] = useState("");
+export function SearchBar({ onSearch, isLoading, initialQuery = "" }: SearchBarProps) {
+  const [query, setQuery] = useState(initialQuery);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
