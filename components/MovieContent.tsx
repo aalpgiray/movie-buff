@@ -12,6 +12,7 @@ interface MovieContentProps {
 
 export async function MovieContent({ params }: MovieContentProps) {
     const { id } = await params;
+    const movie = await getMovieDetails(id);
 
     return (
         <>
@@ -19,25 +20,32 @@ export async function MovieContent({ params }: MovieContentProps) {
                 <MovieDetail imdbID={id} />
             </Suspense>
 
-            <Suspense
-                fallback={
-                    <div className="mt-12 pt-8 border-t border-border">
-                        <h2 className="font-semibold text-2xl mb-6 text-foreground">
-                            Similar Movies
-                        </h2>
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                            {[...Array(6)].map((_, i) => (
-                                <div
-                                    key={i}
-                                    className="aspect-[2/3] rounded-lg bg-secondary animate-pulse"
-                                />
-                            ))}
+            {movie && movie.Genre && movie.imdbRating && movie.Plot && (
+                <Suspense
+                    fallback={
+                        <div className="mt-12 pt-8 border-t border-border">
+                            <h2 className="font-semibold text-2xl mb-6 text-foreground">
+                                Similar Movies
+                            </h2>
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                                {[...Array(6)].map((_, i) => (
+                                    <div
+                                        key={i}
+                                        className="aspect-[2/3] rounded-lg bg-secondary animate-pulse"
+                                    />
+                                ))}
+                            </div>
                         </div>
-                    </div>
-                }
-            >
-                <SimilarMoviesWrapper imdbID={id} />
-            </Suspense>
+                    }
+                >
+                    <SimilarMoviesSection
+                        movieTitle={movie.Title}
+                        genre={movie.Genre}
+                        rating={movie.imdbRating}
+                        plot={movie.Plot}
+                    />
+                </Suspense>
+            )}
 
             <Suspense
                 fallback={
@@ -72,22 +80,5 @@ export async function MovieContent({ params }: MovieContentProps) {
                 <StreamingInfo imdbID={id} />
             </Suspense>
         </>
-    );
-}
-
-async function SimilarMoviesWrapper({ imdbID }: { imdbID: string }) {
-    const movie = await getMovieDetails(imdbID);
-
-    if (!movie || !movie.Genre || !movie.imdbRating || !movie.Plot) {
-        return null;
-    }
-
-    return (
-        <SimilarMoviesSection
-            movieTitle={movie.Title}
-            genre={movie.Genre}
-            rating={movie.imdbRating}
-            plot={movie.Plot}
-        />
     );
 }
