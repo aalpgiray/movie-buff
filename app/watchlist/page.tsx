@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { MovieCard } from "@/components/MovieCard";
+import { HeaderWrapper } from "@/components/HeaderWrapper";
 import { ArrowLeft, Bookmark } from "lucide-react";
 import Link from "next/link";
 import type { Movie } from "@/lib/types";
@@ -66,7 +67,9 @@ export default function WatchlistPage() {
     const handleToggleSeen = () => { };
 
     return (
-        <main className="min-h-screen bg-background text-foreground p-8 md:p-24">
+        <>
+        <HeaderWrapper />
+        <main className="min-h-screen bg-background text-foreground p-8 md:p-24 pt-20">
             <div className="max-w-7xl mx-auto">
                 <Link
                     href="/"
@@ -129,5 +132,6 @@ export default function WatchlistPage() {
                 )}
             </div>
         </main>
+        </>
     );
 }
