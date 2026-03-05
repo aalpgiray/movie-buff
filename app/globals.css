@@ -1,6 +1,9 @@
 @import "tailwindcss";
 
-@theme {
+@theme inline {
+  --font-sans: 'Inter', 'Inter Fallback';
+  --font-mono: 'JetBrains Mono', monospace;
+
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
   --color-card: hsl(var(--card));
@@ -13,40 +16,27 @@
   --color-muted-foreground: hsl(var(--muted-foreground));
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
-  --radius: 0.5rem;
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --radius: 0.75rem;
 }
 
 @layer base {
-  /* Light mode - default */
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 4%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 4%;
-    --primary: 262 83% 58%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 240 5% 96%;
-    --secondary-foreground: 240 6% 10%;
-    --muted: 240 5% 96%;
-    --muted-foreground: 240 4% 46%;
-    --border: 240 6% 90%;
-    --input: 240 6% 90%;
-  }
-
-  /* Dark mode */
-  html.dark {
-    --background: 240 10% 6%;
+    --background: 0 0% 5%;
     --foreground: 0 0% 95%;
-    --card: 240 10% 12%;
+    --card: 0 0% 9%;
     --card-foreground: 0 0% 95%;
-    --primary: 262 80% 65%;
-    --primary-foreground: 240 10% 6%;
-    --secondary: 240 5% 20%;
+    --primary: 0 0% 95%;
+    --primary-foreground: 0 0% 5%;
+    --secondary: 0 0% 13%;
     --secondary-foreground: 0 0% 95%;
-    --muted: 240 5% 28%;
-    --muted-foreground: 240 5% 70%;
-    --border: 240 5% 20%;
-    --input: 240 5% 20%;
+    --muted: 0 0% 13%;
+    --muted-foreground: 0 0% 55%;
+    --border: 0 0% 16%;
+    --input: 0 0% 16%;
+    --accent: 25 95% 55%;
+    --accent-foreground: 0 0% 5%;
   }
 
   * {
@@ -54,6 +44,6 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans antialiased;
   }
 }

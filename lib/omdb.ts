@@ -1,21 +1,19 @@
 import type { OmdbSearchResponse, MovieDetails } from "@/lib/types";
 
 const OMDB_API_KEY = process.env.OMDB_API_KEY;
-const BASE_URL = "http://www.omdbapi.com/";
+const BASE_URL = "https://www.omdbapi.com/";
+
+const FETCH_OPTS: RequestInit = { next: { revalidate: 3600 } };
 
 export async function searchMovies(query: string): Promise<OmdbSearchResponse> {
 	if (!OMDB_API_KEY) {
 		console.warn("OMDB_API_KEY is not set.");
 		return { Search: [], Response: "False" };
 	}
-	// OMDb search is by 's' parameter
 	const url = `${BASE_URL}?apikey=${OMDB_API_KEY}&s=${encodeURIComponent(query)}&type=movie`;
-
-	const res = await fetch(url);
+	const res = await fetch(url, FETCH_OPTS);
 	if (!res.ok) {
-		throw new Error(
-			`Failed to fetch from OMDb: ${res.status} ${res.statusText}`,
-		);
+		throw new Error(`Failed to fetch from OMDb: ${res.status} ${res.statusText}`);
 	}
 	const data: OmdbSearchResponse = await res.json();
 	if (data.Error) {
@@ -28,6 +26,7 @@ export async function getMovieDetails(imdbID: string): Promise<MovieDetails | nu
 	if (!OMDB_API_KEY) return null;
 	const res = await fetch(
 		`${BASE_URL}?apikey=${OMDB_API_KEY}&i=${imdbID}&plot=full`,
+		FETCH_OPTS,
 	);
 	const data: MovieDetails = await res.json();
 	return data;

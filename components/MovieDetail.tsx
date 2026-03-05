@@ -1,38 +1,35 @@
 import { Star } from "lucide-react";
 import Image from "next/image";
 import { getMovieDetails } from "@/lib/omdb";
+import { getTMDbPoster } from "@/lib/tmdb";
 import { MovieDetailActions } from "@/components/MovieDetailActions";
 
 interface MovieDetailProps {
   imdbID: string;
-  isSeen?: boolean;
-  isInWatchlist?: boolean;
-  onToggleSeen?: (id: string) => void;
-  onToggleWatchlist?: (id: string) => void;
 }
 
-export async function MovieDetail({
-  imdbID,
-  isSeen = false,
-  isInWatchlist = false,
-  onToggleSeen,
-  onToggleWatchlist,
-}: MovieDetailProps) {
-  const movie = await getMovieDetails(imdbID);
+export async function MovieDetail({ imdbID }: MovieDetailProps) {
+  const [movie, tmdbPoster] = await Promise.all([
+    getMovieDetails(imdbID),
+    getTMDbPoster(imdbID),
+  ]);
 
   if (!movie) {
     return <div className="text-center text-muted-foreground">Movie details not found.</div>;
   }
 
+  const posterSrc = tmdbPoster ?? (movie.Poster !== "N/A" ? movie.Poster : null);
+
   return (
     <>
       <div className="grid md:grid-cols-[300px_1fr] gap-8 animate-in fade-in duration-500">
         <div className="relative aspect-[2/3] w-full rounded-xl overflow-hidden shadow-2xl border border-border">
-          {movie.Poster !== "N/A" && (
+          {posterSrc && (
             <Image
-              src={movie.Poster}
+              src={posterSrc}
               alt={movie.Title}
               fill
+              unoptimized
               className="object-cover"
               priority
               sizes="(max-width: 768px) 100vw, 300px"
@@ -51,15 +48,13 @@ export async function MovieDetail({
               <span className="px-2 py-1 rounded-md bg-secondary border border-border text-secondary-foreground">{movie.Runtime}</span>
               <span className="px-2 py-1 rounded-md bg-secondary border border-border text-secondary-foreground">{movie.Genre}</span>
             </div>
-            {onToggleSeen && onToggleWatchlist && (
-              <MovieDetailActions
-                imdbID={movie.imdbID}
-                isSeen={isSeen}
-                isInWatchlist={isInWatchlist}
-                onToggleSeen={onToggleSeen}
-                onToggleWatchlist={onToggleWatchlist}
-              />
-            )}
+            <MovieDetailActions
+              imdbID={movie.imdbID}
+              title={movie.Title}
+              year={movie.Year}
+              poster={posterSrc ?? movie.Poster}
+              type={movie.Type}
+            />
           </div>
 
           <div className="flex items-center gap-3">

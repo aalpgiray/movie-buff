@@ -1,6 +1,5 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { MovieCard } from "@/components/MovieCard";
 import { SearchBar } from "@/components/SearchBar";
@@ -14,39 +13,35 @@ export default function Home() {
 	const [watchlistMovies, setWatchlistMovies] = useState<string[]>([]);
 	const [searchTerms, setSearchTerms] = useState<string[]>([]);
 	const [currentQuery, setCurrentQuery] = useState("");
+	const [hasSearched, setHasSearched] = useState(false);
 
 	useEffect(() => {
 		const stored = localStorage.getItem("seenMovies");
-		if (stored) {
-			setSeenMovies(JSON.parse(stored));
-		}
+		if (stored) setSeenMovies(JSON.parse(stored));
 
 		const watchlist = localStorage.getItem("watchlistMovies");
-		if (watchlist) {
-			setWatchlistMovies(JSON.parse(watchlist));
-		}
+		if (watchlist) setWatchlistMovies(JSON.parse(watchlist));
+
+		const savedQuery = sessionStorage.getItem("lastQuery");
+		const savedMovies = sessionStorage.getItem("lastMovies");
+		const savedTerms = sessionStorage.getItem("lastTerms");
+		if (savedQuery) { setCurrentQuery(savedQuery); setHasSearched(true); }
+		if (savedMovies) setMovies(JSON.parse(savedMovies));
+		if (savedTerms) setSearchTerms(JSON.parse(savedTerms));
 	}, []);
 
 	const toggleSeen = (id: string) => {
 		const newSeen = seenMovies.includes(id)
 			? seenMovies.filter((movieId) => movieId !== id)
 			: [...seenMovies, id];
-
 		setSeenMovies(newSeen);
 		localStorage.setItem("seenMovies", JSON.stringify(newSeen));
-
-		// Also store details for AI context and watched page
 		if (!seenMovies.includes(id)) {
 			const movie = movies.find((m) => m.imdbID === id);
 			if (movie) {
 				const storedDetails = localStorage.getItem("seenMoviesDetails");
 				const details = storedDetails ? JSON.parse(storedDetails) : {};
-				details[id] = {
-					title: movie.Title,
-					poster: movie.Poster,
-					year: movie.Year,
-					type: movie.Type
-				};
+				details[id] = { title: movie.Title, poster: movie.Poster, year: movie.Year, type: movie.Type };
 				localStorage.setItem("seenMoviesDetails", JSON.stringify(details));
 			}
 		}
@@ -56,22 +51,14 @@ export default function Home() {
 		const newWatchlist = watchlistMovies.includes(id)
 			? watchlistMovies.filter((movieId) => movieId !== id)
 			: [...watchlistMovies, id];
-
 		setWatchlistMovies(newWatchlist);
 		localStorage.setItem("watchlistMovies", JSON.stringify(newWatchlist));
-
-		// Store movie details
 		if (!watchlistMovies.includes(id)) {
 			const movie = movies.find((m) => m.imdbID === id);
 			if (movie) {
 				const storedDetails = localStorage.getItem("watchlistMoviesDetails");
 				const details = storedDetails ? JSON.parse(storedDetails) : {};
-				details[id] = {
-					title: movie.Title,
-					poster: movie.Poster,
-					year: movie.Year,
-					type: movie.Type
-				};
+				details[id] = { title: movie.Title, poster: movie.Poster, year: movie.Year, type: movie.Type };
 				localStorage.setItem("watchlistMoviesDetails", JSON.stringify(details));
 			}
 		}
@@ -82,31 +69,26 @@ export default function Home() {
 		setMovies([]);
 		setSearchTerms([]);
 		setCurrentQuery(query);
+		setHasSearched(true);
 
 		try {
 			const storedDetails = localStorage.getItem("seenMoviesDetails");
 			const seenDetails = storedDetails ? JSON.parse(storedDetails) : {};
-
-			// Get titles of seen movies, limited to last 20
-			const seenTitles = seenMovies
-				.slice(-20)
-				.map((id) => seenDetails[id])
-				.filter(Boolean);
+			const seenTitles = seenMovies.slice(-20).map((id) => seenDetails[id]).filter(Boolean);
 
 			const res = await fetch("/api/search", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({
-					query,
-					seenMovies: seenTitles,
-					seenMovieIds: seenMovies,
-				}),
+				body: JSON.stringify({ query, seenMovies: seenTitles, seenMovieIds: seenMovies }),
 			});
 
 			const data = await res.json();
 			if (data.movies) {
 				setMovies(data.movies);
 				setSearchTerms(data.terms || []);
+				sessionStorage.setItem("lastQuery", query);
+				sessionStorage.setItem("lastMovies", JSON.stringify(data.movies));
+				sessionStorage.setItem("lastTerms", JSON.stringify(data.terms || []));
 			}
 		} catch (error) {
 			console.error("Search failed:", error);
@@ -118,33 +100,21 @@ export default function Home() {
 	const handleLoadMore = async () => {
 		if (loading) return;
 		setLoading(true);
-
 		try {
 			const currentIds = movies.map((m) => m.imdbID);
-
 			const storedDetails = localStorage.getItem("seenMoviesDetails");
 			const seenDetails = storedDetails ? JSON.parse(storedDetails) : {};
-			const seenTitles = seenMovies
-				.slice(-20)
-				.map((id) => seenDetails[id])
-				.filter(Boolean);
-
+			const seenTitles = seenMovies.slice(-20).map((id) => seenDetails[id]).filter(Boolean);
 			const allSeenIds = [...seenMovies, ...currentIds];
 
 			const res = await fetch("/api/search", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({
-					query: currentQuery,
-					seenMovies: seenTitles,
-					seenMovieIds: allSeenIds,
-				}),
+				body: JSON.stringify({ query: currentQuery, seenMovies: seenTitles, seenMovieIds: allSeenIds }),
 			});
 
 			const data = await res.json();
-			if (data.movies) {
-				setMovies((prev) => [...prev, ...data.movies]);
-			}
+			if (data.movies) setMovies((prev) => [...prev, ...data.movies]);
 		} catch (error) {
 			console.error("Load more failed:", error);
 		} finally {
@@ -156,69 +126,93 @@ export default function Home() {
 		<>
 			<Header watchlistCount={watchlistMovies.length} watchedCount={seenMovies.length} />
 
-			<main className="min-h-screen bg-background text-foreground overflow-hidden pt-20">
-				<div className="fixed inset-0 bg-gradient-to-br from-purple-50 via-background to-blue-50 pointer-events-none" />
-
-				<div className="relative z-10 flex flex-col items-center px-6 py-16 md:py-24">
-					<motion.div
-						className="w-full max-w-5xl flex flex-col items-center gap-12"
-						initial={{ opacity: 0, y: 20 }}
-						animate={{ opacity: 1, y: 0 }}
-						transition={{ duration: 0.5 }}
-					>
-						<div className="text-center space-y-6">
-							<h2 className="text-5xl md:text-7xl font-bold tracking-tighter bg-clip-text text-transparent bg-gradient-to-b from-foreground to-foreground/60">
-								How are you feeling&apos;?
-							</h2>
-							<p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-								Describe your mood, and we'll find the perfect movies to match.
+			<main className="min-h-screen bg-background text-foreground pt-14">
+				{/* Hero / Search */}
+				<div className="max-w-3xl mx-auto px-6 pt-20 pb-12">
+					{!hasSearched && (
+						<div className="mb-10">
+							<h1 className="text-4xl md:text-6xl font-bold tracking-tight text-foreground text-balance mb-4">
+								What are you in<br />the mood for?
+							</h1>
+							<p className="text-muted-foreground text-lg">
+								Describe a feeling, genre, or vibe and we'll find the perfect film.
 							</p>
 						</div>
+					)}
+					<SearchBar onSearch={handleSearch} isLoading={loading} initialQuery={currentQuery} />
 
-						<div className="w-full max-w-2xl">
-							<SearchBar onSearch={handleSearch} isLoading={loading} />
+					{/* Search terms */}
+					{searchTerms.length > 0 && (
+						<div className="flex flex-wrap gap-2 mt-4">
+							{searchTerms.map((term) => (
+								<span key={term} className="px-2.5 py-1 text-xs rounded-full border border-border text-muted-foreground bg-secondary">
+									{term}
+								</span>
+							))}
 						</div>
+					)}
+				</div>
 
-						<div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-							<AnimatePresence mode="popLayout">
-								{movies.map((movie: Movie) => (
-									<div key={movie.imdbID} className="relative group">
-										<MovieCard
-											movie={movie}
-											isSeen={seenMovies.includes(movie.imdbID)}
-											onToggleSeen={toggleSeen}
-											isInWatchlist={watchlistMovies.includes(movie.imdbID)}
-											onToggleWatchlist={toggleWatchlist}
-										/>
-										{movie.reason && (
-											<div className="absolute -bottom-2 left-4 right-4 bg-card/95 backdrop-blur-md text-xs p-2 rounded-lg border border-border shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-20">
-												<span className="text-primary font-bold">Why?</span>{" "}
-												<span className="text-card-foreground">{movie.reason}</span>
-											</div>
-										)}
+				{/* Results */}
+				{(movies.length > 0 || loading) && (
+					<div className="max-w-7xl mx-auto px-6 pb-24">
+						{movies.length > 0 && (
+							<p className="text-sm text-muted-foreground mb-6">
+								{movies.length} films for &ldquo;{currentQuery}&rdquo;
+							</p>
+						)}
+
+						<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+							{movies.map((movie: Movie) => (
+								<div key={movie.imdbID} className="relative group/card">
+									<MovieCard
+										movie={movie}
+										isSeen={seenMovies.includes(movie.imdbID)}
+										onToggleSeen={toggleSeen}
+										isInWatchlist={watchlistMovies.includes(movie.imdbID)}
+										onToggleWatchlist={toggleWatchlist}
+									/>
+									{movie.reason && (
+										<div className="absolute -bottom-1 left-0 right-0 mx-1 bg-card border border-border text-xs p-2 rounded-lg shadow-lg opacity-0 group-hover/card:opacity-100 transition-opacity duration-200 pointer-events-none z-20">
+											<span className="text-accent font-semibold">Why? </span>
+											<span className="text-card-foreground">{movie.reason}</span>
+										</div>
+									)}
+								</div>
+							))}
+
+							{/* Loading skeletons */}
+							{loading && movies.length === 0 && Array.from({ length: 12 }).map((_, i) => (
+								<div key={i} className="rounded-xl overflow-hidden border border-border bg-card animate-pulse">
+									<div className="aspect-[2/3] bg-muted" />
+									<div className="p-3 space-y-2">
+										<div className="h-3 bg-muted rounded w-3/4" />
+										<div className="h-2.5 bg-muted rounded w-1/3" />
 									</div>
-								))}
-							</AnimatePresence>
+								</div>
+							))}
 						</div>
-
 
 						{movies.length > 0 && (
-							<button
-								onClick={handleLoadMore}
-								disabled={loading}
-								className="px-6 py-3 rounded-full bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors disabled:opacity-50"
-							>
-								{loading ? "Loading..." : "Load More"}
-							</button>
-						)}
-
-						{!loading && movies.length === 0 && searchTerms.length > 0 && (
-							<div className="text-muted-foreground">
-								No movies found. Try a different mood.
+							<div className="flex justify-center mt-12">
+								<button
+									onClick={handleLoadMore}
+									disabled={loading}
+									className="px-8 py-3 rounded-xl border border-border text-sm font-medium text-foreground hover:bg-secondary transition-colors disabled:opacity-40"
+								>
+									{loading ? "Loading..." : "Load more"}
+								</button>
 							</div>
 						)}
-					</motion.div>
-				</div>
+					</div>
+				)}
+
+				{/* Empty state after search */}
+				{!loading && hasSearched && movies.length === 0 && (
+					<div className="max-w-3xl mx-auto px-6 py-12 text-center">
+						<p className="text-muted-foreground">No films found. Try a different search.</p>
+					</div>
+				)}
 			</main>
 		</>
 	);
