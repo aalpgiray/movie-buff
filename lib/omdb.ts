@@ -8,6 +8,7 @@ export async function searchMovies(query: string): Promise<OmdbSearchResponse> {
 		console.warn("OMDB_API_KEY is not set.");
 		return { Search: [], Response: "False" };
 	}
+	"use cache";
 	// OMDb search is by 's' parameter
 	const url = `${BASE_URL}?apikey=${OMDB_API_KEY}&s=${encodeURIComponent(query)}&type=movie`;
 
@@ -25,6 +26,7 @@ export async function searchMovies(query: string): Promise<OmdbSearchResponse> {
 }
 
 export async function getMovieDetails(imdbID: string): Promise<MovieDetails | null> {
+	"use cache";
 	if (!OMDB_API_KEY) return null;
 	const res = await fetch(
 		`${BASE_URL}?apikey=${OMDB_API_KEY}&i=${imdbID}&plot=full`,
