@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 const font = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Mood Movie Search",
-  description: "Find movies based on your emotions.",
+  title: "MovieBuff",
+  description: "Find movies based on your mood.",
 };
 
 export default function RootLayout({
@@ -16,9 +17,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={cn(font.className, "antialiased bg-background text-foreground min-h-screen")}>
-        {children}
+        <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
   );
