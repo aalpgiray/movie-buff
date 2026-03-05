@@ -3,11 +3,10 @@
 import { clsx } from "clsx";
 import { ExternalLink, Filter } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import type { StreamingOption, CountryMetadata } from "@/lib/types";
+import type { StreamingOption } from "@/lib/types";
 
 interface AvailabilityMatrixProps {
 	availability: Record<string, StreamingOption[]>;
-	countriesMetadata?: CountryMetadata[];
 }
 
 // Comprehensive country mapping as fallback (all countries)
@@ -264,10 +263,7 @@ const COUNTRY_MAP: Record<string, { name: string; flag: string }> = {
 	zw: { name: "Zimbabwe", flag: "🇿🇼" },
 };
 
-export function AvailabilityMatrix({
-	availability,
-	countriesMetadata = []
-}: AvailabilityMatrixProps) {
+export function AvailabilityMatrix({ availability }: AvailabilityMatrixProps) {
 	const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
 	const [userCountry, setUserCountry] = useState<string | null>(null);
 
@@ -300,25 +296,14 @@ export function AvailabilityMatrix({
 		detectCountry();
 	}, []);
 
-	// Create a lookup map for country metadata, merge API data with fallback
+	// Build country lookup from the static fallback map
 	const countryLookup = useMemo(() => {
 		const map = new Map<string, { name: string; flag: string }>();
-
-		// First, add all from the fallback map
 		Object.entries(COUNTRY_MAP).forEach(([code, info]) => {
 			map.set(code, info);
 		});
-
-		// Then, override with API metadata if available
-		countriesMetadata.forEach(country => {
-			map.set(country.countryCode, {
-				name: country.name,
-				flag: country.flagEmoji
-			});
-		});
-
 		return map;
-	}, [countriesMetadata]);
+	}, []);
 
 	// 1. Extract all unique platforms and countries from the data
 	const { allPlatforms, allCountries } = useMemo(() => {

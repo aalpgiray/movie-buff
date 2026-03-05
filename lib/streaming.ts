@@ -1,11 +1,25 @@
-import type { StreamingOption, CountryMetadata } from "./types";
+import type { StreamingOption } from "./types";
 
 const RAPID_API_KEY = process.env.STREAMING_AVAILABILITY_API_KEY;
 const BASE_URL = "https://streaming-availability.p.rapidapi.com";
 
+// V4 API response shape
+interface V4StreamingOption {
+	service: { id: string; name: string; imageSet?: Record<string, string> };
+	type: string;
+	link: string;
+	videoLink?: string;
+	quality?: string;
+	price?: { amount: string; currency: string; formatted: string };
+}
+
+interface V4ShowResponse {
+	streamingOptions: Record<string, V4StreamingOption[]>;
+}
+
 export interface StreamingAvailabilityResponse {
+	// keyed by country code (e.g. "us", "gb"), value is array of streaming options
 	streamingInfo: Record<string, StreamingOption[]>;
-	countries?: CountryMetadata[];
 }
 
 export async function getStreamingAvailability(
@@ -18,7 +32,7 @@ export async function getStreamingAvailability(
 		return null;
 	}
 
-	const options = {
+	const reqOptions = {
 		method: "GET",
 		headers: {
 			"X-RapidAPI-Key": RAPID_API_KEY,
@@ -27,10 +41,10 @@ export async function getStreamingAvailability(
 	};
 
 	try {
-		// V4 Endpoint: /shows/{id} - Omitting country returns global availability
-		const url = `${BASE_URL}/shows/${imdbId}?output_language=en`;
+		// V4 Endpoint: /shows/{id} with IMDb id — returns global streaming availability
+		const url = `${BASE_URL}/shows/${imdbId}?output_language=en&series_granularity=show`;
 
-		const response = await fetch(url, options);
+		const response = await fetch(url, reqOptions);
 
 		if (!response.ok) {
 			const errorText = await response.text();
@@ -38,8 +52,21 @@ export async function getStreamingAvailability(
 			return null;
 		}
 
-		const data: StreamingAvailabilityResponse = await response.json();
-		return data;
+		const data: V4ShowResponse = await response.json();
+
+		// V4 returns `streamingOptions` keyed by country code.
+		// Normalise it into our internal `streamingInfo` shape.
+		const streamingInfo: Record<string, StreamingOption[]> = {};
+
+		for (const [countryCode, options] of Object.entries(data.streamingOptions ?? {})) {
+			streamingInfo[countryCode] = options.map((opt) => ({
+				service: { id: opt.service.id, name: opt.service.name },
+				link: opt.link,
+				type: opt.type,
+			}));
+		}
+
+		return { streamingInfo };
 	} catch (error) {
 		console.error("Error fetching streaming data:", error);
 		return null;

@@ -1,42 +1,69 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
+
+type ThemeMode = "auto" | "light" | "dark";
+
+interface ThemeContextValue {
+  theme: ThemeMode;
+  cycleTheme: () => void;
+  mounted: boolean;
+  systemPrefersDark: boolean;
+}
+
+const ThemeContext = createContext<ThemeContextValue>({
+  theme: "auto",
+  cycleTheme: () => {},
+  mounted: false,
+  systemPrefersDark: true,
+});
+
+export function useTheme() {
+  return useContext(ThemeContext);
+}
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
-  const [theme, setTheme] = useState<"light" | "dark">("dark");
+  const [theme, setTheme] = useState<ThemeMode>("auto");
+  const [systemPrefersDark, setSystemPrefersDark] = useState(true);
 
   useEffect(() => {
-    // Get theme from localStorage or system preference
-    const savedTheme = localStorage.getItem("theme") as "light" | "dark" | null;
     const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const initialTheme = savedTheme || (prefersDark ? "dark" : "light");
-    
-    setTheme(initialTheme);
-    applyTheme(initialTheme);
+    setSystemPrefersDark(prefersDark);
+    const saved = localStorage.getItem("theme") as ThemeMode | null;
+    const initial = saved || "auto";
+    setTheme(initial);
+    applyTheme(initial, prefersDark);
     setMounted(true);
+
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleChange = (e: MediaQueryListEvent) => {
+      setSystemPrefersDark(e.matches);
+      const current = (localStorage.getItem("theme") as ThemeMode) || "auto";
+      if (current === "auto") applyTheme("auto", e.matches);
+    };
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
   }, []);
 
-  const applyTheme = (newTheme: "light" | "dark") => {
-    if (newTheme === "dark") {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
+  const applyTheme = (t: ThemeMode, prefersDark: boolean) => {
+    const isDark = t === "dark" || (t === "auto" && prefersDark);
+    isDark
+      ? document.documentElement.classList.add("dark")
+      : document.documentElement.classList.remove("dark");
   };
 
-  const toggleTheme = () => {
-    const newTheme = theme === "dark" ? "light" : "dark";
-    setTheme(newTheme);
-    localStorage.setItem("theme", newTheme);
-    applyTheme(newTheme);
+  const cycleTheme = () => {
+    const themes: ThemeMode[] = ["auto", "light", "dark"];
+    const next = themes[(themes.indexOf(theme) + 1) % themes.length];
+    setTheme(next);
+    localStorage.setItem("theme", next);
+    applyTheme(next, systemPrefersDark);
   };
 
-  // Provide theme context through window object
-  useEffect(() => {
-    (window as any).toggleTheme = toggleTheme;
-    (window as any).getCurrentTheme = () => theme;
-  }, [theme]);
-
-  return <>{children}</>;
+  return (
+    <ThemeContext.Provider value={{ theme, cycleTheme, mounted, systemPrefersDark }}>
+      {children}
+    </ThemeContext.Provider>
+  );
 }

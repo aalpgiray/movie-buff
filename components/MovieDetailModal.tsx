@@ -116,7 +116,6 @@ export function MovieDetailModal({
 							) : (
 								<AvailabilityMatrix
 									availability={streaming.streamingInfo}
-									countriesMetadata={streaming.countries}
 								/>
 							)}
 						</div>
