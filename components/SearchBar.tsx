@@ -27,7 +27,7 @@ export function SearchBar({ onSearch, isLoading, initialQuery = "" }: SearchBarP
           placeholder="Describe your mood or what you're looking for..."
           className="flex-1 h-14 bg-transparent pl-12 pr-4 text-base text-foreground placeholder:text-muted-foreground outline-none"
         />
-        <div className="pr-2">
+        <div className="pr-3 shrink-0">
           <button
             type="submit"
             disabled={isLoading || !query.trim()}
