@@ -12,9 +12,10 @@ interface MovieCardProps {
   isSeen: boolean;
   onToggleWatchlist?: (id: string) => void;
   isInWatchlist?: boolean;
+  priority?: boolean;
 }
 
-export function MovieCard({ movie, onToggleSeen, isSeen, onToggleWatchlist, isInWatchlist }: MovieCardProps) {
+export function MovieCard({ movie, onToggleSeen, isSeen, onToggleWatchlist, isInWatchlist, priority = false }: MovieCardProps) {
   return (
     <div className={cn(
       "group relative rounded-xl overflow-hidden bg-card border border-border transition-all hover:border-foreground/20 hover:shadow-xl",
@@ -30,6 +31,8 @@ export function MovieCard({ movie, onToggleSeen, isSeen, onToggleWatchlist, isIn
               unoptimized
               className="object-cover transition-transform duration-500 group-hover:scale-105"
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+              priority={priority}
+              loading={priority ? "eager" : "lazy"}
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">

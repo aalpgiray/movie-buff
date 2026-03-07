@@ -163,15 +163,16 @@ export default function Home() {
 						)}
 
 						<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-							{movies.map((movie: Movie) => (
-								<div key={movie.imdbID} className="relative group/card">
-									<MovieCard
-										movie={movie}
-										isSeen={seenMovies.includes(movie.imdbID)}
-										onToggleSeen={toggleSeen}
-										isInWatchlist={watchlistMovies.includes(movie.imdbID)}
-										onToggleWatchlist={toggleWatchlist}
-									/>
+						{movies.map((movie: Movie, index: number) => (
+							<div key={movie.imdbID} className="relative group/card">
+								<MovieCard
+									movie={movie}
+									isSeen={seenMovies.includes(movie.imdbID)}
+									onToggleSeen={toggleSeen}
+									isInWatchlist={watchlistMovies.includes(movie.imdbID)}
+									onToggleWatchlist={toggleWatchlist}
+									priority={index < 6}
+								/>
 									{movie.reason && (
 										<div className="absolute -bottom-1 left-0 right-0 mx-1 bg-card border border-border text-xs p-2 rounded-lg shadow-lg opacity-0 group-hover/card:opacity-100 transition-opacity duration-200 pointer-events-none z-20">
 											<span className="text-accent font-semibold">Why? </span>
