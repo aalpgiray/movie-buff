@@ -18,7 +18,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={cn(font.className, "antialiased bg-background text-foreground min-h-screen")}>
+      <body className={cn(font.className, "antialiased bg-background text-foreground min-h-screen pt-14")}>
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
