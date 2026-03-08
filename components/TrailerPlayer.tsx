@@ -1,6 +1,6 @@
 "use client";
 
-import { ExternalLink, Play } from "lucide-react";
+import { Play } from "lucide-react";
 
 interface TrailerPlayerProps {
 	videoKey: string;
@@ -19,7 +19,6 @@ export function TrailerPlayer({ videoKey }: TrailerPlayerProps) {
 			>
 				<Play className="h-5 w-5 group-hover:scale-110 transition-transform" />
 				Watch trailer on YouTube
-				<ExternalLink className="h-4 w-4" />
 			</a>
 		</div>
 	);
