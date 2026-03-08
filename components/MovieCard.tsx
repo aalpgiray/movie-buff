@@ -1,6 +1,6 @@
 "use client";
 
-import { Eye, Bookmark, Film } from "lucide-react";
+import { Eye, EyeOff, Bookmark, BookmarkCheck, Film } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -60,26 +60,30 @@ export function MovieCard({ movie, onToggleSeen, isSeen, onToggleWatchlist, isIn
             variant={isInWatchlist ? "default" : "secondary"}
             size="icon"
             className={cn(
-              "h-7 w-7 backdrop-blur-md",
-              isInWatchlist ? "bg-accent text-accent-foreground" : "bg-black/50 text-white hover:bg-black/70"
+              "h-7 w-7 backdrop-blur-md shadow-md",
+              isInWatchlist 
+                ? "bg-accent text-accent-foreground hover:bg-accent/90" 
+                : "bg-background/80 text-foreground hover:bg-background"
             )}
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleWatchlist(movie.imdbID); }}
             title={isInWatchlist ? "Remove from watchlist" : "Add to watchlist"}
           >
-            <Bookmark className={cn("h-3.5 w-3.5", isInWatchlist && "fill-current")} />
+            {isInWatchlist ? <BookmarkCheck className="h-3.5 w-3.5" /> : <Bookmark className="h-3.5 w-3.5" />}
           </Button>
         )}
         <Button
           variant={isSeen ? "default" : "secondary"}
           size="icon"
           className={cn(
-            "h-7 w-7 backdrop-blur-md",
-            isSeen ? "bg-foreground text-background" : "bg-black/50 text-white hover:bg-black/70"
+            "h-7 w-7 backdrop-blur-md shadow-md",
+            isSeen 
+              ? "bg-primary text-primary-foreground hover:bg-primary/90" 
+              : "bg-background/80 text-foreground hover:bg-background"
           )}
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleSeen(movie.imdbID); }}
           title={isSeen ? "Mark as unwatched" : "Mark as watched"}
         >
-          <Eye className={cn("h-3.5 w-3.5", isSeen && "fill-current")} />
+          {isSeen ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
         </Button>
       </div>
 

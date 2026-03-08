@@ -1,6 +1,6 @@
 "use client";
 
-import { Eye, Bookmark, Check } from "lucide-react";
+import { Eye, EyeOff, Bookmark, BookmarkCheck, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -71,7 +71,9 @@ export function MovieDetailActions({ imdbID, title, year, poster, type }: MovieD
       >
         {watchlistFeedback
           ? <Check className="h-4 w-4" />
-          : <Bookmark className={cn("h-4 w-4", isInWatchlist && "fill-current")} />
+          : isInWatchlist 
+            ? <BookmarkCheck className="h-4 w-4" />
+            : <Bookmark className="h-4 w-4" />
         }
         {watchlistFeedback
           ? (isInWatchlist ? "Added!" : "Removed!")
@@ -82,14 +84,13 @@ export function MovieDetailActions({ imdbID, title, year, poster, type }: MovieD
       <Button
         onClick={toggleSeen}
         variant={isSeen ? "default" : "secondary"}
-        className={cn(
-          isSeen && "bg-green-500 text-white hover:bg-green-600"
-        )}
         title={isSeen ? "Mark as unwatched" : "Mark as watched"}
       >
         {seenFeedback
           ? <Check className="h-4 w-4" />
-          : <Eye className={cn("h-4 w-4", isSeen && "fill-current")} />
+          : isSeen 
+            ? <EyeOff className="h-4 w-4" />
+            : <Eye className="h-4 w-4" />
         }
         {seenFeedback
           ? (isSeen ? "Marked!" : "Removed!")
