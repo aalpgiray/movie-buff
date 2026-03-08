@@ -59,6 +59,97 @@ export async function getTMDbPoster(imdbId: string): Promise<string | null> {
   }
 }
 
+interface TMDbMovie {
+  id: number;
+  title: string;
+  poster_path: string | null;
+  release_date: string;
+  vote_average: number;
+  overview: string;
+  imdb_id?: string;
+}
+
+interface TMDbPopularResponse {
+  results: TMDbMovie[];
+  page: number;
+  total_pages: number;
+  total_results: number;
+}
+
+export async function getPopularMovies(): Promise<TMDbPopularResponse> {
+  if (!TMDB_READ_ACCESS_TOKEN) {
+    console.warn("TMDB_READ_ACCESS_TOKEN is not set.");
+    return { results: [], page: 1, total_pages: 0, total_results: 0 };
+  }
+
+  try {
+    const res = await fetch(
+      `${BASE_URL}/movie/popular?language=en-US&page=1`,
+      { headers: bearerHeaders(), ...CACHE_OPTS }
+    );
+    if (!res.ok) throw new Error("Failed to fetch popular movies");
+    return res.json();
+  } catch (error) {
+    console.error("Error fetching popular movies:", error);
+    return { results: [], page: 1, total_pages: 0, total_results: 0 };
+  }
+}
+
+export async function getTopRatedMovies(): Promise<TMDbPopularResponse> {
+  if (!TMDB_READ_ACCESS_TOKEN) {
+    console.warn("TMDB_READ_ACCESS_TOKEN is not set.");
+    return { results: [], page: 1, total_pages: 0, total_results: 0 };
+  }
+
+  try {
+    const res = await fetch(
+      `${BASE_URL}/movie/top_rated?language=en-US&page=1`,
+      { headers: bearerHeaders(), ...CACHE_OPTS }
+    );
+    if (!res.ok) throw new Error("Failed to fetch top rated movies");
+    return res.json();
+  } catch (error) {
+    console.error("Error fetching top rated movies:", error);
+    return { results: [], page: 1, total_pages: 0, total_results: 0 };
+  }
+}
+
+export async function getTrendingMovies(): Promise<TMDbPopularResponse> {
+  if (!TMDB_READ_ACCESS_TOKEN) {
+    console.warn("TMDB_READ_ACCESS_TOKEN is not set.");
+    return { results: [], page: 1, total_pages: 0, total_results: 0 };
+  }
+
+  try {
+    const res = await fetch(
+      `${BASE_URL}/trending/movie/week?language=en-US`,
+      { headers: bearerHeaders(), ...CACHE_OPTS }
+    );
+    if (!res.ok) throw new Error("Failed to fetch trending movies");
+    return res.json();
+  } catch (error) {
+    console.error("Error fetching trending movies:", error);
+    return { results: [], page: 1, total_pages: 0, total_results: 0 };
+  }
+}
+
+export async function getMovieExternalIds(tmdbId: number): Promise<{ imdb_id: string | null }> {
+  if (!TMDB_READ_ACCESS_TOKEN) {
+    return { imdb_id: null };
+  }
+
+  try {
+    const res = await fetch(
+      `${BASE_URL}/movie/${tmdbId}/external_ids`,
+      { headers: bearerHeaders(), ...CACHE_OPTS }
+    );
+    if (!res.ok) return { imdb_id: null };
+    return res.json();
+  } catch {
+    return { imdb_id: null };
+  }
+}
+
 export async function getMovieTrailers(imdbId: string): Promise<TMDbVideo[]> {
   if (!TMDB_READ_ACCESS_TOKEN) {
     console.warn("TMDB_READ_ACCESS_TOKEN is not set.");

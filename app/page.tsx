@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { MovieCard } from "@/components/MovieCard";
 import { SearchBar } from "@/components/SearchBar";
 import { Header } from "@/components/Header";
@@ -8,23 +8,63 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
+import { TrendingUp, Star } from "lucide-react";
 import type { Movie } from "@/lib/types";
+
+interface SeenMovieRating {
+	id: string;
+	rating: number;
+	title?: string;
+	poster?: string;
+	year?: string;
+}
 
 export default function Home() {
 	const [movies, setMovies] = useState<Movie[]>([]);
+	const [discoverMovies, setDiscoverMovies] = useState<Movie[]>([]);
 	const [loading, setLoading] = useState(false);
+	const [discoverLoading, setDiscoverLoading] = useState(true);
 	const [seenMovies, setSeenMovies] = useState<string[]>([]);
+	const [seenMoviesRatings, setSeenMoviesRatings] = useState<SeenMovieRating[]>([]);
 	const [watchlistMovies, setWatchlistMovies] = useState<string[]>([]);
 	const [searchTerms, setSearchTerms] = useState<string[]>([]);
 	const [currentQuery, setCurrentQuery] = useState("");
 	const [hasSearched, setHasSearched] = useState(false);
 
+	const fetchDiscoverMovies = useCallback(async (seenIds: string[], ratingsData: SeenMovieRating[]) => {
+		setDiscoverLoading(true);
+		try {
+			const res = await fetch("/api/discover", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					seenMovieIds: seenIds,
+					seenMoviesWithRatings: ratingsData,
+				}),
+			});
+			const data = await res.json();
+			if (data.movies) {
+				setDiscoverMovies(data.movies);
+			}
+		} catch (error) {
+			console.error("Failed to fetch discover movies:", error);
+		} finally {
+			setDiscoverLoading(false);
+		}
+	}, []);
+
 	useEffect(() => {
 		const stored = localStorage.getItem("seenMovies");
-		if (stored) setSeenMovies(JSON.parse(stored));
+		const seenIds = stored ? JSON.parse(stored) : [];
+		if (stored) setSeenMovies(seenIds);
 
 		const watchlist = localStorage.getItem("watchlistMovies");
 		if (watchlist) setWatchlistMovies(JSON.parse(watchlist));
+
+		// Load seen movies with ratings
+		const ratingsStored = localStorage.getItem("seenMoviesRatings");
+		const ratingsData: SeenMovieRating[] = ratingsStored ? JSON.parse(ratingsStored) : [];
+		setSeenMoviesRatings(ratingsData);
 
 		const savedQuery = sessionStorage.getItem("lastQuery");
 		const savedMovies = sessionStorage.getItem("lastMovies");
@@ -32,7 +72,10 @@ export default function Home() {
 		if (savedQuery) { setCurrentQuery(savedQuery); setHasSearched(true); }
 		if (savedMovies) setMovies(JSON.parse(savedMovies));
 		if (savedTerms) setSearchTerms(JSON.parse(savedTerms));
-	}, []);
+
+		// Fetch discover movies on initial load
+		fetchDiscoverMovies(seenIds, ratingsData);
+	}, [fetchDiscoverMovies]);
 
 	const toggleSeen = (id: string) => {
 		const newSeen = seenMovies.includes(id)
