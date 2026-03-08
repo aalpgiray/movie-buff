@@ -1,15 +1,17 @@
 "use client";
 
 import { ExternalLink, Filter } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import type { StreamingOption } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 interface AvailabilityMatrixProps {
 	availability: Record<string, StreamingOption[]>;
+	/** Tailwind top class for sticky header (top-14 for page, top-0 for modal) */
+	stickyTop?: string;
 }
 
 const COUNTRY_MAP: Record<string, { name: string; flag: string }> = {
@@ -63,9 +65,25 @@ const COUNTRY_MAP: Record<string, { name: string; flag: string }> = {
 	za: { name: "South Africa", flag: "ZA" },
 };
 
-export function AvailabilityMatrix({ availability }: AvailabilityMatrixProps) {
+export function AvailabilityMatrix({ availability, stickyTop = "top-14" }: AvailabilityMatrixProps) {
 	const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
 	const [userCountry, setUserCountry] = useState<string | null>(null);
+	const headerScrollRef = useRef<HTMLDivElement>(null);
+	const bodyScrollRef = useRef<HTMLDivElement>(null);
+
+	// Sync horizontal scroll: header has NO overflow (so sticky works), transform inner grid to mirror body
+	useEffect(() => {
+		const header = headerScrollRef.current;
+		const body = bodyScrollRef.current;
+		if (!header || !body) return;
+		const syncFromBody = () => {
+			const inner = header.firstElementChild as HTMLElement | null;
+			if (inner) inner.style.transform = `translateX(-${body.scrollLeft}px)`;
+		};
+		body.addEventListener("scroll", syncFromBody);
+		syncFromBody(); // initial sync
+		return () => body.removeEventListener("scroll", syncFromBody);
+	}, [availability, selectedPlatforms]);
 
 	useEffect(() => {
 		const detectCountry = async () => {
@@ -202,7 +220,9 @@ export function AvailabilityMatrix({ availability }: AvailabilityMatrixProps) {
 							<Button
 								key={platform.id}
 								variant={
-									selectedPlatforms.includes(platform.id) ? "default" : "outline"
+									selectedPlatforms.includes(platform.id)
+										? "default"
+										: "outline"
 								}
 								size="sm"
 								onClick={() => togglePlatform(platform.id)}
@@ -215,47 +235,70 @@ export function AvailabilityMatrix({ availability }: AvailabilityMatrixProps) {
 				</CardContent>
 			</Card>
 
-			{/* Matrix — horizontal scroll on the card, vertical scroll via page */}
-			<Card className="overflow-x-auto">
-				<table className="w-full text-sm text-left border-collapse">
-					<thead className="sticky top-14 z-20 bg-card shadow-sm">
-						<tr className="border-b border-border">
-							<th className="p-4 font-medium text-card-foreground min-w-[150px] bg-card">
-								Country
-							</th>
-							{selectedPlatforms.map((platformId) => {
-								const platform = allPlatforms.find((p) => p.id === platformId);
-								return (
-									<th
-										key={platformId}
-										className="p-4 font-medium text-center min-w-[120px] bg-card text-card-foreground"
-									>
-										{platform?.name}
-									</th>
-								);
-							})}
-						</tr>
-					</thead>
-					<tbody className="divide-y divide-border">
+			{/* Matrix — header outside overflow wrapper so sticky works (overflow-y:clip→hidden breaks sticky) */}
+			<Card>
+				{/* Sticky header — NO overflow (so sticky works), transform syncs horizontal scroll with body */}
+				<div
+					ref={headerScrollRef}
+					className={cn(
+						"sticky z-10 overflow-visible bg-card border-b border-border",
+						stickyTop,
+					)}
+				>
+					<div
+						className="grid w-full min-w-max text-sm text-left items-stretch"
+						style={{
+							gridTemplateColumns: `minmax(150px, 1fr) ${selectedPlatforms.map(() => "minmax(120px, 1fr)").join(" ")}`,
+							gridAutoRows: "60px",
+						}}
+					>
+						<div className="p-4 font-medium text-card-foreground border-r border-border min-w-[150px] flex items-center">
+							Country
+						</div>
+						{selectedPlatforms.map((platformId, idx) => {
+							const platform = allPlatforms.find((p) => p.id === platformId);
+							const isLast = idx === selectedPlatforms.length - 1;
+							return (
+								<div
+									key={platformId}
+									className={cn(
+										"p-4 font-medium text-center text-card-foreground min-w-[120px] flex items-center justify-center",
+										!isLast && "border-r border-border",
+									)}
+								>
+									{platform?.name}
+								</div>
+							);
+						})}
+					</div>
+				</div>
+				{/* Body — overflow-x for horizontal scroll */}
+				<div ref={bodyScrollRef} className="overflow-x-auto">
+					<div
+						className="grid w-full min-w-max text-sm text-left items-stretch"
+						style={{
+							gridTemplateColumns: `minmax(150px, 1fr) ${selectedPlatforms.map(() => "minmax(120px, 1fr)").join(" ")}`,
+							gridAutoRows: "60px",
+						}}
+					>
+						{/* Body rows */}
 						{allCountries.map((countryCode) => {
 							const countryInfo = countryLookup.get(countryCode) || {
 								name: countryCode.toUpperCase(),
 								flag: countryCode.toUpperCase(),
 							};
-
 							const isUserCountry = countryCode === userCountry;
 
 							return (
-								<tr
-									key={countryCode}
-									className={cn(
-										"transition-colors",
-										isUserCountry
-											? "bg-primary/5 hover:bg-primary/10"
-											: "hover:bg-muted/50",
-									)}
-								>
-									<td className="p-4 font-medium text-foreground">
+								<React.Fragment key={countryCode}>
+									<div
+										className={cn(
+											"p-4 font-medium text-foreground border-b border-r border-border flex items-center overflow-hidden",
+											isUserCountry
+												? "bg-primary/5 hover:bg-primary/10"
+												: "hover:bg-muted/50",
+										)}
+									>
 										<span className="mr-2 text-xs font-bold text-muted-foreground">
 											{countryInfo.flag}
 										</span>
@@ -265,22 +308,28 @@ export function AvailabilityMatrix({ availability }: AvailabilityMatrixProps) {
 												You
 											</Badge>
 										)}
-									</td>
-									{selectedPlatforms.map((platformId) => {
+									</div>
+									{selectedPlatforms.map((platformId, pIdx) => {
 										const options = getOptions(countryCode, platformId);
 										const hasOptions = options.length > 0;
 
 										return (
-											<td
+											<div
 												key={`${countryCode}-${platformId}`}
-												className="p-4 text-center"
+												className={cn(
+													"p-4 text-center border-b flex items-center justify-center overflow-hidden",
+													pIdx < selectedPlatforms.length - 1 && "border-r border-border",
+													isUserCountry
+														? "bg-primary/5 hover:bg-primary/10"
+														: "hover:bg-muted/50",
+												)}
 											>
 												{hasOptions ? (
 													<Button
 														variant="ghost"
 														size="sm"
 														asChild
-														className="h-auto px-2 py-1 text-xs bg-primary/10 hover:bg-primary hover:text-primary-foreground"
+														className="h-auto max-h-full px-2 py-1 text-xs bg-primary/10 hover:bg-primary hover:text-primary-foreground"
 													>
 														<a
 															href={options[0].link}
@@ -299,14 +348,14 @@ export function AvailabilityMatrix({ availability }: AvailabilityMatrixProps) {
 														-
 													</span>
 												)}
-											</td>
+											</div>
 										);
 									})}
-								</tr>
+								</React.Fragment>
 							);
 						})}
-					</tbody>
-				</table>
+					</div>
+				</div>
 			</Card>
 		</div>
 	);

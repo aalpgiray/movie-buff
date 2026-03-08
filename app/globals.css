@@ -79,3 +79,10 @@
     @apply bg-background text-foreground font-sans antialiased;
   }
 }
+
+/* Prevents overflow-x wrapper from creating block scroll container (breaks sticky).
+   overflow-y: clip doesn't create a scroll container (unlike hidden/auto). */
+.overflow-x-auto-only {
+  overflow-x: auto;
+  overflow-y: clip;
+}
