@@ -241,18 +241,18 @@ export function AvailabilityMatrix({ availability, stickyTop = "top-14" }: Avail
 				<div
 					ref={headerScrollRef}
 					className={cn(
-						"sticky z-10 overflow-visible bg-card border-b border-border",
+						"sticky z-10 overflow-visible bg-card border-b border-border rounded-t-lg",
 						stickyTop,
 					)}
 				>
 					<div
 						className="grid w-full min-w-max text-sm text-left items-stretch"
 						style={{
-							gridTemplateColumns: `minmax(150px, 1fr) ${selectedPlatforms.map(() => "minmax(120px, 1fr)").join(" ")}`,
+							gridTemplateColumns: `minmax(240px, 1fr) ${selectedPlatforms.map(() => "minmax(240px, 1fr)").join(" ")}`,
 							gridAutoRows: "60px",
 						}}
 					>
-						<div className="p-4 font-medium text-card-foreground border-r border-border min-w-[150px] flex items-center">
+						<div className="p-4 font-medium text-card-foreground border-r border-border min-w-[240px] flex items-center">
 							Country
 						</div>
 						{selectedPlatforms.map((platformId, idx) => {
@@ -262,7 +262,7 @@ export function AvailabilityMatrix({ availability, stickyTop = "top-14" }: Avail
 								<div
 									key={platformId}
 									className={cn(
-										"p-4 font-medium text-center text-card-foreground min-w-[120px] flex items-center justify-center",
+										"p-4 font-medium text-center text-card-foreground min-w-[240px] flex items-center justify-center",
 										!isLast && "border-r border-border",
 									)}
 								>
@@ -273,11 +273,11 @@ export function AvailabilityMatrix({ availability, stickyTop = "top-14" }: Avail
 					</div>
 				</div>
 				{/* Body — overflow-x for horizontal scroll */}
-				<div ref={bodyScrollRef} className="overflow-x-auto">
+				<div ref={bodyScrollRef} className="overflow-x-auto rounded-b-lg">
 					<div
 						className="grid w-full min-w-max text-sm text-left items-stretch"
 						style={{
-							gridTemplateColumns: `minmax(150px, 1fr) ${selectedPlatforms.map(() => "minmax(120px, 1fr)").join(" ")}`,
+							gridTemplateColumns: `minmax(240px, 1fr) ${selectedPlatforms.map(() => "minmax(240px, 1fr)").join(" ")}`,
 							gridAutoRows: "60px",
 						}}
 					>
@@ -317,7 +317,7 @@ export function AvailabilityMatrix({ availability, stickyTop = "top-14" }: Avail
 											<div
 												key={`${countryCode}-${platformId}`}
 												className={cn(
-													"p-4 text-center border-b flex items-center justify-center overflow-hidden",
+													"p-4 text-center border-b flex items-center justify-center",
 													pIdx < selectedPlatforms.length - 1 && "border-r border-border",
 													isUserCountry
 														? "bg-primary/5 hover:bg-primary/10"
@@ -329,7 +329,7 @@ export function AvailabilityMatrix({ availability, stickyTop = "top-14" }: Avail
 														variant="ghost"
 														size="sm"
 														asChild
-														className="h-auto max-h-full px-2 py-1 text-xs bg-primary/10 hover:bg-primary hover:text-primary-foreground"
+														className="h-auto max-h-full px-2 py-1 text-xs bg-primary/10 hover:bg-primary hover:text-primary-foreground whitespace-nowrap"
 													>
 														<a
 															href={options[0].link}
