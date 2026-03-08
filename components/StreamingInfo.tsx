@@ -15,9 +15,7 @@ export async function StreamingInfo({ imdbID }: { imdbID: string }) {
           No streaming data available for this title.
         </div>
       ) : (
-        <AvailabilityMatrix
-          availability={streamingInfo}
-        />
+        <AvailabilityMatrix availability={streamingInfo} />
       )}
     </div>
   );

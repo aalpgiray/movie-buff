@@ -27,7 +27,7 @@ export function SimilarMoviesList({ movies }: SimilarMoviesListProps) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05 }}
-            className="group relative overflow-hidden rounded-xl bg-card border border-border/50 shadow-lg transition-all hover:shadow-2xl"
+            className="group relative overflow-hidden rounded-xl bg-card border border-border/50 transition-all hover:border-foreground/20"
           >
             <Link
               href={`/movie/${movie.imdbID}`}
