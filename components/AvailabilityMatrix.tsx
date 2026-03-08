@@ -148,7 +148,7 @@ export function AvailabilityMatrix({ availability }: AvailabilityMatrixProps) {
 				setSelectedPlatforms(initial);
 			}
 		}
-	}, [allPlatforms, selectedPlatforms.length]);
+	}, [allPlatforms, selectedPlatforms]);
 
 	if (!availability || Object.keys(availability).length === 0) {
 		return (
