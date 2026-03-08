@@ -4,6 +4,10 @@ import { useEffect, useState } from "react";
 import { MovieCard } from "@/components/MovieCard";
 import { SearchBar } from "@/components/SearchBar";
 import { Header } from "@/components/Header";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent } from "@/components/ui/card";
 import type { Movie } from "@/lib/types";
 
 export default function Home() {
@@ -145,9 +149,9 @@ export default function Home() {
 					{searchTerms.length > 0 && (
 						<div className="flex flex-wrap gap-2 mt-4">
 							{searchTerms.map((term) => (
-								<span key={term} className="px-2.5 py-1 text-xs rounded-full border border-border text-muted-foreground bg-secondary">
+								<Badge key={term} variant="outline">
 									{term}
-								</span>
+								</Badge>
 							))}
 						</div>
 					)}
@@ -163,46 +167,49 @@ export default function Home() {
 						)}
 
 						<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-						{movies.map((movie: Movie, index: number) => (
-							<div key={movie.imdbID} className="relative group/card">
-								<MovieCard
-									movie={movie}
-									isSeen={seenMovies.includes(movie.imdbID)}
-									onToggleSeen={toggleSeen}
-									isInWatchlist={watchlistMovies.includes(movie.imdbID)}
-									onToggleWatchlist={toggleWatchlist}
-									priority={index < 6}
-								/>
+							{movies.map((movie: Movie, index: number) => (
+								<div key={movie.imdbID} className="relative group/card">
+									<MovieCard
+										movie={movie}
+										isSeen={seenMovies.includes(movie.imdbID)}
+										onToggleSeen={toggleSeen}
+										isInWatchlist={watchlistMovies.includes(movie.imdbID)}
+										onToggleWatchlist={toggleWatchlist}
+										priority={index < 6}
+									/>
 									{movie.reason && (
-										<div className="absolute -bottom-1 left-0 right-0 mx-1 bg-card border border-border text-xs p-2 rounded-lg shadow-lg opacity-0 group-hover/card:opacity-100 transition-opacity duration-200 pointer-events-none z-20">
-											<span className="text-accent font-semibold">Why? </span>
-											<span className="text-card-foreground">{movie.reason}</span>
-										</div>
+										<Card className="absolute -bottom-1 left-0 right-0 mx-1 opacity-0 group-hover/card:opacity-100 transition-opacity duration-200 pointer-events-none z-20">
+											<CardContent className="p-2 text-xs">
+												<span className="text-accent font-semibold">Why? </span>
+												<span className="text-card-foreground">{movie.reason}</span>
+											</CardContent>
+										</Card>
 									)}
 								</div>
 							))}
 
 							{/* Loading skeletons */}
 							{loading && movies.length === 0 && Array.from({ length: 12 }).map((_, i) => (
-								<div key={i} className="rounded-xl overflow-hidden border border-border bg-card animate-pulse">
-									<div className="aspect-[2/3] bg-muted" />
-									<div className="p-3 space-y-2">
-										<div className="h-3 bg-muted rounded w-3/4" />
-										<div className="h-2.5 bg-muted rounded w-1/3" />
-									</div>
-								</div>
+								<Card key={i} className="overflow-hidden">
+									<Skeleton className="aspect-[2/3]" />
+									<CardContent className="p-3 space-y-2">
+										<Skeleton className="h-3 w-3/4" />
+										<Skeleton className="h-2.5 w-1/3" />
+									</CardContent>
+								</Card>
 							))}
 						</div>
 
 						{movies.length > 0 && (
 							<div className="flex justify-center mt-12">
-								<button
+								<Button
+									variant="outline"
+									size="lg"
 									onClick={handleLoadMore}
 									disabled={loading}
-									className="px-8 py-3 rounded-xl border border-border text-sm font-medium text-foreground hover:bg-secondary transition-colors disabled:opacity-40"
 								>
 									{loading ? "Loading..." : "Load more"}
-								</button>
+								</Button>
 							</div>
 						)}
 					</div>

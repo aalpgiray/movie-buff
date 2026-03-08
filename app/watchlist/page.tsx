@@ -5,6 +5,8 @@ import { MovieCard } from "@/components/MovieCard";
 import { HeaderWrapper } from "@/components/HeaderWrapper";
 import { ArrowLeft, Bookmark } from "lucide-react";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { Movie } from "@/lib/types";
 
 export default function WatchlistPage() {
@@ -24,7 +26,6 @@ export default function WatchlistPage() {
             const ids: string[] = JSON.parse(watchlistIds);
             const details = watchlistDetails ? JSON.parse(watchlistDetails) : {};
 
-            // Use stored details
             const movies: Movie[] = ids.map(id => {
                 const movieData = details[id];
                 if (typeof movieData === 'object' && movieData !== null) {
@@ -45,7 +46,7 @@ export default function WatchlistPage() {
                 };
             });
 
-            setWatchlistMovies(movies.reverse()); // Most recent first
+            setWatchlistMovies(movies.reverse());
             setLoading(false);
         };
 
@@ -63,7 +64,6 @@ export default function WatchlistPage() {
         setWatchlistMovies(watchlistMovies.filter(m => m.imdbID !== id));
     };
 
-    // Dummy function for watched status (not used on watchlist page)
     const handleToggleSeen = () => { };
 
     return (
@@ -71,18 +71,17 @@ export default function WatchlistPage() {
         <HeaderWrapper />
         <main className="min-h-screen bg-background text-foreground p-8 md:p-24 pt-20">
             <div className="max-w-7xl mx-auto">
-                <Link
-                    href="/"
-                    className="inline-flex items-center gap-2 text-muted-foreground hover:text-white transition-colors mb-8 group"
-                >
-                    <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
-                    Back to Search
-                </Link>
+                <Button variant="ghost" asChild className="mb-8 group">
+                    <Link href="/">
+                        <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
+                        Back to Search
+                    </Link>
+                </Button>
 
                 <div className="mb-12">
                     <div className="flex items-center gap-3 mb-4">
-                        <Bookmark className="h-8 w-8 text-amber-500" />
-                        <h1 className="text-4xl md:text-5xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-white to-white/60">
+                        <Bookmark className="h-8 w-8 text-accent" />
+                        <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground">
                             My Watchlist
                         </h1>
                     </div>
@@ -94,9 +93,9 @@ export default function WatchlistPage() {
                 {loading ? (
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                         {[...Array(8)].map((_, i) => (
-                            <div
+                            <Skeleton
                                 key={i}
-                                className="aspect-[2/3] rounded-xl bg-secondary animate-pulse"
+                                className="aspect-[2/3] rounded-xl"
                             />
                         ))}
                     </div>
@@ -109,12 +108,11 @@ export default function WatchlistPage() {
                         <p className="text-muted-foreground/70 text-sm mb-6">
                             Bookmark movies you want to watch later!
                         </p>
-                        <Link
-                            href="/"
-                            className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-medium transition-all"
-                        >
-                            Start Searching
-                        </Link>
+                        <Button asChild>
+                            <Link href="/">
+                                Start Searching
+                            </Link>
+                        </Button>
                     </div>
                 ) : (
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
