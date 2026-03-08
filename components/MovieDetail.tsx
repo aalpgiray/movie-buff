@@ -3,6 +3,7 @@ import Image from "next/image";
 import { getMovieDetails } from "@/lib/omdb";
 import { getTMDbPoster } from "@/lib/tmdb";
 import { MovieDetailActions } from "@/components/MovieDetailActions";
+import { Badge } from "@/components/ui/badge";
 
 interface MovieDetailProps {
   imdbID: string;
@@ -42,11 +43,11 @@ export async function MovieDetail({ imdbID }: MovieDetailProps) {
             <h1 className="text-4xl md:text-5xl font-bold my-6 tracking-tight text-foreground">
               {movie.Title}
             </h1>
-            <div className="flex flex-wrap items-center justify-start gap-4 text-sm mb-4">
-              <span className="px-2 py-1 rounded-md bg-secondary border border-border text-secondary-foreground">{movie.Year}</span>
-              <span className="px-2 py-1 rounded-md bg-secondary border border-border text-secondary-foreground">{movie.Rated}</span>
-              <span className="px-2 py-1 rounded-md bg-secondary border border-border text-secondary-foreground">{movie.Runtime}</span>
-              <span className="px-2 py-1 rounded-md bg-secondary border border-border text-secondary-foreground">{movie.Genre}</span>
+            <div className="flex flex-wrap items-center justify-start gap-2 mb-4">
+              <Badge variant="secondary">{movie.Year}</Badge>
+              <Badge variant="secondary">{movie.Rated}</Badge>
+              <Badge variant="secondary">{movie.Runtime}</Badge>
+              <Badge variant="secondary">{movie.Genre}</Badge>
             </div>
             <MovieDetailActions
               imdbID={movie.imdbID}

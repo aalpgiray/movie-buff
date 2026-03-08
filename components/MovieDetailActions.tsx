@@ -1,8 +1,9 @@
 "use client";
 
-import { Eye, Bookmark, Check } from "lucide-react";
+import { Eye, EyeOff, Bookmark, BookmarkCheck, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
 
 interface MovieDetailActionsProps {
   imdbID: string;
@@ -60,45 +61,42 @@ export function MovieDetailActions({ imdbID, title, year, poster, type }: MovieD
 
   return (
     <div className="flex gap-3 mt-4">
-      <button
+      <Button
         onClick={toggleWatchlist}
+        variant={isInWatchlist ? "default" : "secondary"}
         className={cn(
-          "inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-all font-medium",
-          isInWatchlist
-            ? "bg-amber-500 text-white shadow-lg shadow-amber-500/20 hover:bg-amber-600"
-            : "bg-secondary border border-border text-foreground hover:bg-secondary/80"
+          isInWatchlist && "bg-accent text-accent-foreground hover:bg-accent/90"
         )}
         title={isInWatchlist ? "Remove from watchlist" : "Add to watchlist"}
       >
         {watchlistFeedback
           ? <Check className="h-4 w-4" />
-          : <Bookmark className={cn("h-4 w-4", isInWatchlist && "fill-current")} />
+          : isInWatchlist 
+            ? <BookmarkCheck className="h-4 w-4" />
+            : <Bookmark className="h-4 w-4" />
         }
         {watchlistFeedback
           ? (isInWatchlist ? "Added!" : "Removed!")
           : (isInWatchlist ? "In Watchlist" : "Add to Watchlist")
         }
-      </button>
+      </Button>
 
-      <button
+      <Button
         onClick={toggleSeen}
-        className={cn(
-          "inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-all font-medium",
-          isSeen
-            ? "bg-green-500 text-white shadow-lg shadow-green-500/20 hover:bg-green-600"
-            : "bg-secondary border border-border text-foreground hover:bg-secondary/80"
-        )}
+        variant={isSeen ? "default" : "secondary"}
         title={isSeen ? "Mark as unwatched" : "Mark as watched"}
       >
         {seenFeedback
           ? <Check className="h-4 w-4" />
-          : <Eye className={cn("h-4 w-4", isSeen && "fill-current")} />
+          : isSeen 
+            ? <EyeOff className="h-4 w-4" />
+            : <Eye className="h-4 w-4" />
         }
         {seenFeedback
           ? (isSeen ? "Marked!" : "Removed!")
           : (isSeen ? "Watched" : "Mark as Watched")
         }
-      </button>
+      </Button>
     </div>
   );
 }
