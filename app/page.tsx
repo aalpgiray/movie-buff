@@ -42,13 +42,8 @@ export default function Home() {
 		setSeenMovies(storedSeen);
 		setWatchlistMovies(storedWatchlist);
 
-		const savedQuery = sessionStorage.getItem("lastQuery");
-		const savedMovies = sessionStorage.getItem("lastMovies");
-		const savedTerms = sessionStorage.getItem("lastTerms");
-		if (savedQuery) { setCurrentQuery(savedQuery); setHasSearched(true); }
-		if (savedMovies) setMovies(JSON.parse(savedMovies));
-		if (savedTerms) setSearchTerms(JSON.parse(savedTerms));
-
+		// Always start fresh on the default (IDB) list — never restore a
+		// previous search so results are never "stuck" on screen at load.
 		rebuildDefaultList(storedSeen);
 	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
@@ -121,9 +116,6 @@ export default function Home() {
 			if (data.movies) {
 				setMovies(data.movies);
 				setSearchTerms(data.terms || []);
-				sessionStorage.setItem("lastQuery", query);
-				sessionStorage.setItem("lastMovies", JSON.stringify(data.movies));
-				sessionStorage.setItem("lastTerms", JSON.stringify(data.terms || []));
 
 				// Persist new movies to IDB and refresh the default list.
 				await upsertMovies(data.movies);
