@@ -192,7 +192,17 @@ export default function Home() {
 							</p>
 						</div>
 					)}
-					<SearchBar onSearch={handleSearch} isLoading={loading} initialQuery={currentQuery} />
+					<SearchBar
+						onSearch={handleSearch}
+						onClear={() => {
+							setHasSearched(false);
+							setMovies([]);
+							setSearchTerms([]);
+							setCurrentQuery("");
+						}}
+						isLoading={loading}
+						initialQuery={currentQuery}
+					/>
 
 					{/* Search terms */}
 					{searchTerms.length > 0 && (
