@@ -4,6 +4,7 @@ import { Eye, EyeOff, Bookmark, BookmarkCheck, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { upsertMovie } from "@/lib/movie-db";
 
 interface MovieDetailActionsProps {
   imdbID: string;
@@ -11,9 +12,11 @@ interface MovieDetailActionsProps {
   year: string;
   poster: string;
   type: string;
+  /** OMDB imdbRating string, e.g. "8.5". Stored in IDB when user marks as watched. */
+  imdbRating?: string;
 }
 
-export function MovieDetailActions({ imdbID, title, year, poster, type }: MovieDetailActionsProps) {
+export function MovieDetailActions({ imdbID, title, year, poster, type, imdbRating }: MovieDetailActionsProps) {
   const [isSeen, setIsSeen] = useState(false);
   const [isInWatchlist, setIsInWatchlist] = useState(false);
   const [seenFeedback, setSeenFeedback] = useState(false);
@@ -46,6 +49,15 @@ export function MovieDetailActions({ imdbID, title, year, poster, type }: MovieD
     setIsSeen(adding);
     flash(setSeenFeedback);
     window.dispatchEvent(new Event("listsUpdated"));
+
+    // Persist seen state and IMDB rating into IndexedDB so the default list
+    // can sort seen movies by quality when the user returns to the home page.
+    const ratingNum = imdbRating ? parseFloat(imdbRating) : undefined;
+    upsertMovie({
+      imdbID,
+      isSeen: adding,
+      ...(adding && ratingNum !== undefined && !isNaN(ratingNum) ? { rating: ratingNum } : {}),
+    }).catch(() => {/* IDB unavailable — silent fail */});
   };
 
   const toggleWatchlist = () => {

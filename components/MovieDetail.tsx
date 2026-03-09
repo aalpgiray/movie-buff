@@ -60,6 +60,7 @@ export async function MovieDetail({ imdbID }: MovieDetailProps) {
 							year={movie.Year}
 							poster={posterSrc ?? movie.Poster}
 							type={movie.Type}
+							imdbRating={movie.imdbRating}
 						/>
 					</div>
 
