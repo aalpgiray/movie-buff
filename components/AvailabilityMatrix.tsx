@@ -219,11 +219,7 @@ export function AvailabilityMatrix({ availability, stickyTop = "top-14" }: Avail
 						{allPlatforms.map((platform) => (
 							<Button
 								key={platform.id}
-								variant={
-									selectedPlatforms.includes(platform.id)
-										? "default"
-										: "outline"
-								}
+								variant={selectedPlatforms.includes(platform.id) ? "default" : "outline"}
 								size="sm"
 								onClick={() => togglePlatform(platform.id)}
 								className="rounded-full"
@@ -235,8 +231,74 @@ export function AvailabilityMatrix({ availability, stickyTop = "top-14" }: Avail
 				</CardContent>
 			</Card>
 
-			{/* Matrix — header outside overflow wrapper so sticky works (overflow-y:clip→hidden breaks sticky) */}
-			<Card>
+			{/* Mobile: stacked country cards */}
+			<div className="flex flex-col gap-3 md:hidden">
+				{allCountries.map((countryCode) => {
+					const countryInfo = countryLookup.get(countryCode) || {
+						name: countryCode.toUpperCase(),
+						flag: countryCode.toUpperCase(),
+					};
+					const isUserCountry = countryCode === userCountry;
+
+					const platformsWithOptions = selectedPlatforms
+						.map((platformId) => ({
+							platformId,
+							name: allPlatforms.find((p) => p.id === platformId)?.name ?? platformId,
+							options: getOptions(countryCode, platformId),
+						}))
+						.filter((p) => p.options.length > 0);
+
+					if (platformsWithOptions.length === 0) return null;
+
+					return (
+						<Card
+							key={countryCode}
+							className={cn(
+								"overflow-hidden",
+								isUserCountry && "ring-2 ring-primary/40",
+							)}
+						>
+							<CardHeader className={cn("py-3 px-4 pb-2", isUserCountry ? "bg-primary/5" : "")}>
+								<div className="flex items-center gap-2">
+									<span className="text-xs font-bold text-muted-foreground">
+										{countryInfo.flag}
+									</span>
+									<span className="font-medium text-sm text-foreground">
+										{countryInfo.name}
+									</span>
+									{isUserCountry && (
+										<Badge variant="default" className="text-[10px] ml-1">
+											You
+										</Badge>
+									)}
+								</div>
+							</CardHeader>
+							<CardContent className="px-4 py-3">
+								<div className="flex flex-wrap gap-2">
+									{platformsWithOptions.map(({ platformId, name, options }) => (
+										<a
+											key={platformId}
+											href={options[0].link}
+											target="_blank"
+											rel="noopener noreferrer"
+											className="inline-flex items-center gap-1 rounded-full bg-primary/10 hover:bg-primary hover:text-primary-foreground text-foreground px-3 py-1 text-xs font-medium transition-colors"
+										>
+											{name}
+											<span className="text-muted-foreground group-hover:text-primary-foreground">
+												· {formatTypes(options)}
+											</span>
+											<ExternalLink className="h-3 w-3 ml-0.5 opacity-60" />
+										</a>
+									))}
+								</div>
+							</CardContent>
+						</Card>
+					);
+				})}
+			</div>
+
+			{/* Desktop: sticky-header scrollable matrix */}
+			<Card className="hidden md:block">
 				{/* Sticky header — NO overflow (so sticky works), transform syncs horizontal scroll with body */}
 				<div
 					ref={headerScrollRef}
@@ -281,7 +343,6 @@ export function AvailabilityMatrix({ availability, stickyTop = "top-14" }: Avail
 							gridAutoRows: "60px",
 						}}
 					>
-						{/* Body rows */}
 						{allCountries.map((countryCode) => {
 							const countryInfo = countryLookup.get(countryCode) || {
 								name: countryCode.toUpperCase(),
@@ -294,9 +355,7 @@ export function AvailabilityMatrix({ availability, stickyTop = "top-14" }: Avail
 									<div
 										className={cn(
 											"p-4 font-medium text-foreground border-b border-r border-border flex items-center overflow-hidden",
-											isUserCountry
-												? "bg-primary/5 hover:bg-primary/10"
-												: "hover:bg-muted/50",
+											isUserCountry ? "bg-primary/5 hover:bg-primary/10" : "hover:bg-muted/50",
 										)}
 									>
 										<span className="mr-2 text-xs font-bold text-muted-foreground">
@@ -312,16 +371,13 @@ export function AvailabilityMatrix({ availability, stickyTop = "top-14" }: Avail
 									{selectedPlatforms.map((platformId, pIdx) => {
 										const options = getOptions(countryCode, platformId);
 										const hasOptions = options.length > 0;
-
 										return (
 											<div
 												key={`${countryCode}-${platformId}`}
 												className={cn(
 													"p-4 text-center border-b flex items-center justify-center",
 													pIdx < selectedPlatforms.length - 1 && "border-r border-border",
-													isUserCountry
-														? "bg-primary/5 hover:bg-primary/10"
-														: "hover:bg-muted/50",
+													isUserCountry ? "bg-primary/5 hover:bg-primary/10" : "hover:bg-muted/50",
 												)}
 											>
 												{hasOptions ? (
@@ -337,16 +393,12 @@ export function AvailabilityMatrix({ availability, stickyTop = "top-14" }: Avail
 															rel="noopener noreferrer"
 															title={`Watch on ${allPlatforms.find((p) => p.id === platformId)?.name}`}
 														>
-															<span className="font-medium">
-																{formatTypes(options)}
-															</span>
+															<span className="font-medium">{formatTypes(options)}</span>
 															<ExternalLink className="h-3 w-3 ml-1" />
 														</a>
 													</Button>
 												) : (
-													<span className="text-muted-foreground/40 block">
-														-
-													</span>
+													<span className="text-muted-foreground/40 block">-</span>
 												)}
 											</div>
 										);
