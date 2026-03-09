@@ -35,6 +35,18 @@ export default function RootLayout({
 }>) {
 	return (
 		<html lang="en" suppressHydrationWarning className="bg-background">
+			<head>
+				{/*
+				  Blocking script: runs synchronously before first paint.
+				  Reads the persisted theme and applies .dark immediately so the
+				  safe-area / status-bar inset never flashes white on iOS PWA.
+				*/}
+				<script
+					dangerouslySetInnerHTML={{
+						__html: `(function(){try{var t=localStorage.getItem('theme')||'auto';var dark=t==='dark'||(t==='auto'&&window.matchMedia('(prefers-color-scheme: dark)').matches);if(dark){document.documentElement.classList.add('dark');var m=document.querySelectorAll('meta[name="theme-color"]');m.forEach(function(el){el.content='#0a0a0a';});}}catch(e){}})();`,
+					}}
+				/>
+			</head>
 			<body
 				className={cn(
 					font.className,
