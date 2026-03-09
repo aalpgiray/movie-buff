@@ -16,8 +16,9 @@
 import type { Movie } from "@/lib/types";
 
 const DB_NAME = "movie-buff";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_NAME = "movies";
+const LISTS_STORE = "lists";
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -31,6 +32,10 @@ function openDB(): Promise<IDBDatabase> {
       const db = (event.target as IDBOpenDBRequest).result;
       if (!db.objectStoreNames.contains(STORE_NAME)) {
         db.createObjectStore(STORE_NAME, { keyPath: "imdbID" });
+      }
+      // v2: general key-value store for user lists (seenMovies, watchlistMovies)
+      if (!db.objectStoreNames.contains(LISTS_STORE)) {
+        db.createObjectStore(LISTS_STORE);
       }
     };
 
@@ -156,6 +161,42 @@ export async function getAllMovies(): Promise<Movie[]> {
 
   db.close();
   return movies;
+}
+
+/**
+ * Read a named list (e.g. "seenMovies", "watchlistMovies") from the lists store.
+ * Returns an empty array if the key doesn't exist.
+ */
+export async function getList(key: string): Promise<string[]> {
+  const db = await openDB();
+
+  const result = await new Promise<string[]>((resolve, reject) => {
+    const tx = db.transaction(LISTS_STORE, "readonly");
+    const store = tx.objectStore(LISTS_STORE);
+    const req = store.get(key);
+    req.onsuccess = () => resolve((req.result as string[]) ?? []);
+    req.onerror = () => reject(req.error);
+  });
+
+  db.close();
+  return result;
+}
+
+/**
+ * Persist a named list to the lists store.
+ */
+export async function setList(key: string, ids: string[]): Promise<void> {
+  const db = await openDB();
+
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(LISTS_STORE, "readwrite");
+    const store = tx.objectStore(LISTS_STORE);
+    store.put(ids, key);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+
+  db.close();
 }
 
 // ---------------------------------------------------------------------------

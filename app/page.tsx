@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import type { Movie } from "@/lib/types";
-import { upsertMovies, getAllMovies, buildDefaultList } from "@/lib/movie-db";
+import { upsertMovies, upsertMovie, getAllMovies, buildDefaultList, getList, setList } from "@/lib/movie-db";
 
 export default function Home() {
 	const [movies, setMovies] = useState<Movie[]>([]);
@@ -35,16 +35,20 @@ export default function Home() {
 		}
 	};
 
-	// Mount: hydrate seen/watchlist from localStorage and build initial default list.
+	// Mount: hydrate seen/watchlist from IDB and build initial default list.
 	useEffect(() => {
-		const storedSeen: string[] = JSON.parse(localStorage.getItem("seenMovies") || "[]");
-		const storedWatchlist: string[] = JSON.parse(localStorage.getItem("watchlistMovies") || "[]");
-		setSeenMovies(storedSeen);
-		setWatchlistMovies(storedWatchlist);
+		(async () => {
+			const [storedSeen, storedWatchlist] = await Promise.all([
+				getList("seenMovies"),
+				getList("watchlistMovies"),
+			]);
+			setSeenMovies(storedSeen);
+			setWatchlistMovies(storedWatchlist);
 
-		// Always start fresh on the default (IDB) list — never restore a
-		// previous search so results are never "stuck" on screen at load.
-		rebuildDefaultList(storedSeen);
+			// Always start fresh on the default (IDB) list — never restore a
+			// previous search so results are never "stuck" on screen at load.
+			rebuildDefaultList(storedSeen);
+		})();
 	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
@@ -56,40 +60,53 @@ export default function Home() {
 	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [seenMovies]);
 
-	const toggleSeen = (id: string) => {
-		const newSeen = seenMovies.includes(id)
-			? seenMovies.filter((movieId) => movieId !== id)
-			: [...seenMovies, id];
+	const toggleSeen = async (id: string) => {
+		const adding = !seenMovies.includes(id);
+		const newSeen = adding
+			? [...seenMovies, id]
+			: seenMovies.filter((movieId) => movieId !== id);
 		setSeenMovies(newSeen);
-		localStorage.setItem("seenMovies", JSON.stringify(newSeen));
+		await setList("seenMovies", newSeen);
 
-		if (!seenMovies.includes(id)) {
+		if (adding) {
 			const movie =
 				movies.find((m) => m.imdbID === id) ??
 				defaultList.find((m) => m.imdbID === id);
 			if (movie) {
-				const details = JSON.parse(localStorage.getItem("seenMoviesDetails") || "{}");
-				details[id] = { title: movie.Title, poster: movie.Poster, year: movie.Year, type: movie.Type };
-				localStorage.setItem("seenMoviesDetails", JSON.stringify(details));
+				await upsertMovie({
+					imdbID: id,
+					Title: movie.Title,
+					Year: movie.Year,
+					Poster: movie.Poster,
+					Type: movie.Type,
+					isSeen: true,
+				});
 			}
+		} else {
+			await upsertMovie({ imdbID: id, isSeen: false });
 		}
 	};
 
-	const toggleWatchlist = (id: string) => {
-		const newWatchlist = watchlistMovies.includes(id)
-			? watchlistMovies.filter((movieId) => movieId !== id)
-			: [...watchlistMovies, id];
+	const toggleWatchlist = async (id: string) => {
+		const adding = !watchlistMovies.includes(id);
+		const newWatchlist = adding
+			? [...watchlistMovies, id]
+			: watchlistMovies.filter((movieId) => movieId !== id);
 		setWatchlistMovies(newWatchlist);
-		localStorage.setItem("watchlistMovies", JSON.stringify(newWatchlist));
+		await setList("watchlistMovies", newWatchlist);
 
-		if (!watchlistMovies.includes(id)) {
+		if (adding) {
 			const movie =
 				movies.find((m) => m.imdbID === id) ??
 				defaultList.find((m) => m.imdbID === id);
 			if (movie) {
-				const details = JSON.parse(localStorage.getItem("watchlistMoviesDetails") || "{}");
-				details[id] = { title: movie.Title, poster: movie.Poster, year: movie.Year, type: movie.Type };
-				localStorage.setItem("watchlistMoviesDetails", JSON.stringify(details));
+				await upsertMovie({
+					imdbID: id,
+					Title: movie.Title,
+					Year: movie.Year,
+					Poster: movie.Poster,
+					Type: movie.Type,
+				});
 			}
 		}
 	};
@@ -102,14 +119,10 @@ export default function Home() {
 		setHasSearched(true);
 
 		try {
-			const storedDetails = localStorage.getItem("seenMoviesDetails");
-			const seenDetails = storedDetails ? JSON.parse(storedDetails) : {};
-			const seenTitles = seenMovies.slice(-20).map((id) => seenDetails[id]).filter(Boolean);
-
 			const res = await fetch("/api/search", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ query, seenMovies: seenTitles, seenMovieIds: seenMovies }),
+				body: JSON.stringify({ query, seenMovies: [], seenMovieIds: seenMovies }),
 			});
 
 			const data = await res.json();
@@ -133,15 +146,12 @@ export default function Home() {
 		setLoading(true);
 		try {
 			const currentIds = movies.map((m) => m.imdbID);
-			const storedDetails = localStorage.getItem("seenMoviesDetails");
-			const seenDetails = storedDetails ? JSON.parse(storedDetails) : {};
-			const seenTitles = seenMovies.slice(-20).map((id) => seenDetails[id]).filter(Boolean);
 			const allSeenIds = [...seenMovies, ...currentIds];
 
 			const res = await fetch("/api/search", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ query: currentQuery, seenMovies: seenTitles, seenMovieIds: allSeenIds }),
+				body: JSON.stringify({ query: currentQuery, seenMovies: [], seenMovieIds: allSeenIds }),
 			});
 
 			const data = await res.json();

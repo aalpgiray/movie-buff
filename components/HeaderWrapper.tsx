@@ -2,28 +2,28 @@
 
 import { useEffect, useState } from "react";
 import { Header } from "@/components/Header";
+import { getList } from "@/lib/movie-db";
 
 export function HeaderWrapper() {
   const [watchlistCount, setWatchlistCount] = useState(0);
   const [watchedCount, setWatchedCount] = useState(0);
 
-  useEffect(() => {
-    const read = () => {
-      const seen: string[] = JSON.parse(localStorage.getItem("seenMovies") || "[]");
-      const watchlist: string[] = JSON.parse(localStorage.getItem("watchlistMovies") || "[]");
-      setWatchedCount(seen.length);
-      setWatchlistCount(watchlist.length);
-    };
+  const read = async () => {
+    const [seen, watchlist] = await Promise.all([
+      getList("seenMovies"),
+      getList("watchlistMovies"),
+    ]);
+    setWatchedCount(seen.length);
+    setWatchlistCount(watchlist.length);
+  };
 
+  useEffect(() => {
     read();
 
     // Keep counts in sync when detail page toggles lists
-    window.addEventListener("storage", read);
     window.addEventListener("listsUpdated", read);
-    return () => {
-      window.removeEventListener("storage", read);
-      window.removeEventListener("listsUpdated", read);
-    };
+    return () => window.removeEventListener("listsUpdated", read);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return <Header watchlistCount={watchlistCount} watchedCount={watchedCount} />;

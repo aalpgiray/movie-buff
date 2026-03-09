@@ -8,63 +8,41 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Movie } from "@/lib/types";
+import { getList, setList, getAllMovies } from "@/lib/movie-db";
 
 export default function WatchlistPage() {
     const [watchlistMovies, setWatchlistMovies] = useState<Movie[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const loadWatchlist = () => {
-            const watchlistIds = localStorage.getItem("watchlistMovies");
-            const watchlistDetails = localStorage.getItem("watchlistMoviesDetails");
+        (async () => {
+            const watchlistIds = await getList("watchlistMovies");
+            if (!watchlistIds.length) { setLoading(false); return; }
 
-            if (!watchlistIds) {
-                setLoading(false);
-                return;
-            }
+            // Pull full movie data from the movies store.
+            const all = await getAllMovies();
+            const byId = Object.fromEntries(all.map((m) => [m.imdbID, m]));
 
-            const ids: string[] = JSON.parse(watchlistIds);
-            const details = watchlistDetails ? JSON.parse(watchlistDetails) : {};
-
-            const movies: Movie[] = ids.map(id => {
-                const movieData = details[id];
-                if (typeof movieData === 'object' && movieData !== null) {
-                    return {
-                        Title: movieData.title || "Unknown Title",
-                        Year: movieData.year || "",
-                        imdbID: id,
-                        Type: movieData.type || "movie",
-                        Poster: movieData.poster || "N/A",
-                    };
-                }
-                return {
-                    Title: typeof movieData === 'string' ? movieData : "Unknown Title",
-                    Year: "",
-                    imdbID: id,
-                    Type: "movie",
-                    Poster: "N/A",
-                };
+            const movies: Movie[] = watchlistIds.map((id) => byId[id] ?? {
+                imdbID: id,
+                Title: "Unknown Title",
+                Year: "",
+                Type: "movie",
+                Poster: "N/A",
             });
 
             setWatchlistMovies(movies.reverse());
             setLoading(false);
-        };
-
-        loadWatchlist();
+        })();
     }, []);
 
-    const handleRemoveFromWatchlist = (id: string) => {
-        const watchlistIds = localStorage.getItem("watchlistMovies");
-        if (!watchlistIds) return;
-
-        const ids: string[] = JSON.parse(watchlistIds);
-        const newIds = ids.filter((movieId) => movieId !== id);
-
-        localStorage.setItem("watchlistMovies", JSON.stringify(newIds));
-        setWatchlistMovies(watchlistMovies.filter(m => m.imdbID !== id));
+    const handleRemoveFromWatchlist = async (id: string) => {
+        const watchlistIds = await getList("watchlistMovies");
+        const newIds = watchlistIds.filter((movieId) => movieId !== id);
+        await setList("watchlistMovies", newIds);
+        setWatchlistMovies((prev) => prev.filter((m) => m.imdbID !== id));
+        window.dispatchEvent(new Event("listsUpdated"));
     };
-
-    const handleToggleSeen = () => { };
 
     return (
         <>
@@ -93,10 +71,7 @@ export default function WatchlistPage() {
                 {loading ? (
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                         {[...Array(8)].map((_, i) => (
-                            <Skeleton
-                                key={i}
-                                className="aspect-[2/3] rounded-xl"
-                            />
+                            <Skeleton key={i} className="aspect-[2/3] rounded-xl" />
                         ))}
                     </div>
                 ) : watchlistMovies.length === 0 ? (
@@ -109,9 +84,7 @@ export default function WatchlistPage() {
                             Bookmark movies you want to watch later!
                         </p>
                         <Button asChild>
-                            <Link href="/">
-                                Start Searching
-                            </Link>
+                            <Link href="/">Start Searching</Link>
                         </Button>
                     </div>
                 ) : (
@@ -121,7 +94,7 @@ export default function WatchlistPage() {
                                 key={movie.imdbID}
                                 movie={movie}
                                 isSeen={false}
-                                onToggleSeen={handleToggleSeen}
+                                onToggleSeen={() => {}}
                                 onToggleWatchlist={handleRemoveFromWatchlist}
                                 isInWatchlist={true}
                             />
