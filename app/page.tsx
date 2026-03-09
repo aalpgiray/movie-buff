@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { MovieCard } from "@/components/MovieCard";
 import { SearchBar } from "@/components/SearchBar";
 import { Header } from "@/components/Header";
@@ -9,61 +9,104 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import type { Movie } from "@/lib/types";
+import { upsertMovies, upsertMovie, getAllMovies, buildDefaultList, getList, setList } from "@/lib/movie-db";
 
 export default function Home() {
 	const [movies, setMovies] = useState<Movie[]>([]);
+	const [defaultList, setDefaultList] = useState<Movie[]>([]);
 	const [loading, setLoading] = useState(false);
+	const [defaultLoading, setDefaultLoading] = useState(true);
 	const [seenMovies, setSeenMovies] = useState<string[]>([]);
 	const [watchlistMovies, setWatchlistMovies] = useState<string[]>([]);
 	const [searchTerms, setSearchTerms] = useState<string[]>([]);
 	const [currentQuery, setCurrentQuery] = useState("");
 	const [hasSearched, setHasSearched] = useState(false);
 
-	useEffect(() => {
-		const stored = localStorage.getItem("seenMovies");
-		if (stored) setSeenMovies(JSON.parse(stored));
-
-		const watchlist = localStorage.getItem("watchlistMovies");
-		if (watchlist) setWatchlistMovies(JSON.parse(watchlist));
-
-		const savedQuery = sessionStorage.getItem("lastQuery");
-		const savedMovies = sessionStorage.getItem("lastMovies");
-		const savedTerms = sessionStorage.getItem("lastTerms");
-		if (savedQuery) { setCurrentQuery(savedQuery); setHasSearched(true); }
-		if (savedMovies) setMovies(JSON.parse(savedMovies));
-		if (savedTerms) setSearchTerms(JSON.parse(savedTerms));
-	}, []);
-
-	const toggleSeen = (id: string) => {
-		const newSeen = seenMovies.includes(id)
-			? seenMovies.filter((movieId) => movieId !== id)
-			: [...seenMovies, id];
-		setSeenMovies(newSeen);
-		localStorage.setItem("seenMovies", JSON.stringify(newSeen));
-		if (!seenMovies.includes(id)) {
-			const movie = movies.find((m) => m.imdbID === id);
-			if (movie) {
-				const storedDetails = localStorage.getItem("seenMoviesDetails");
-				const details = storedDetails ? JSON.parse(storedDetails) : {};
-				details[id] = { title: movie.Title, poster: movie.Poster, year: movie.Year, type: movie.Type };
-				localStorage.setItem("seenMoviesDetails", JSON.stringify(details));
-			}
+	/** Rebuild and update the default list from IDB each time seenMovies changes. */
+	const rebuildDefaultList = async (seenIds: string[]) => {
+		try {
+			const all = await getAllMovies();
+			const list = buildDefaultList(all, new Set(seenIds));
+			setDefaultList(list);
+		} catch {
+			// IDB not available (e.g. SSR / private mode)
+		} finally {
+			setDefaultLoading(false);
 		}
 	};
 
-	const toggleWatchlist = (id: string) => {
-		const newWatchlist = watchlistMovies.includes(id)
-			? watchlistMovies.filter((movieId) => movieId !== id)
-			: [...watchlistMovies, id];
-		setWatchlistMovies(newWatchlist);
-		localStorage.setItem("watchlistMovies", JSON.stringify(newWatchlist));
-		if (!watchlistMovies.includes(id)) {
-			const movie = movies.find((m) => m.imdbID === id);
+	// Mount: hydrate seen/watchlist from IDB and build initial default list.
+	useEffect(() => {
+		(async () => {
+			const [storedSeen, storedWatchlist] = await Promise.all([
+				getList("seenMovies"),
+				getList("watchlistMovies"),
+			]);
+			setSeenMovies(storedSeen);
+			setWatchlistMovies(storedWatchlist);
+
+			// Always start fresh on the default (IDB) list — never restore a
+			// previous search so results are never "stuck" on screen at load.
+			rebuildDefaultList(storedSeen);
+		})();
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
+
+	// Rebuild default list whenever seen status changes (e.g. user toggles seen on home page).
+	const isFirstRender = useRef(true);
+	useEffect(() => {
+		if (isFirstRender.current) { isFirstRender.current = false; return; }
+		rebuildDefaultList(seenMovies);
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [seenMovies]);
+
+	const toggleSeen = async (id: string) => {
+		const adding = !seenMovies.includes(id);
+		const newSeen = adding
+			? [...seenMovies, id]
+			: seenMovies.filter((movieId) => movieId !== id);
+		setSeenMovies(newSeen);
+		await setList("seenMovies", newSeen);
+
+		if (adding) {
+			const movie =
+				movies.find((m) => m.imdbID === id) ??
+				defaultList.find((m) => m.imdbID === id);
 			if (movie) {
-				const storedDetails = localStorage.getItem("watchlistMoviesDetails");
-				const details = storedDetails ? JSON.parse(storedDetails) : {};
-				details[id] = { title: movie.Title, poster: movie.Poster, year: movie.Year, type: movie.Type };
-				localStorage.setItem("watchlistMoviesDetails", JSON.stringify(details));
+				await upsertMovie({
+					imdbID: id,
+					Title: movie.Title,
+					Year: movie.Year,
+					Poster: movie.Poster,
+					Type: movie.Type,
+					isSeen: true,
+				});
+			}
+		} else {
+			await upsertMovie({ imdbID: id, isSeen: false });
+		}
+	};
+
+	const toggleWatchlist = async (id: string) => {
+		const adding = !watchlistMovies.includes(id);
+		const newWatchlist = adding
+			? [...watchlistMovies, id]
+			: watchlistMovies.filter((movieId) => movieId !== id);
+		setWatchlistMovies(newWatchlist);
+		await setList("watchlistMovies", newWatchlist);
+
+		if (adding) {
+			const movie =
+				movies.find((m) => m.imdbID === id) ??
+				defaultList.find((m) => m.imdbID === id);
+			if (movie) {
+				await upsertMovie({
+					imdbID: id,
+					Title: movie.Title,
+					Year: movie.Year,
+					Poster: movie.Poster,
+					Type: movie.Type,
+				});
 			}
 		}
 	};
@@ -76,23 +119,20 @@ export default function Home() {
 		setHasSearched(true);
 
 		try {
-			const storedDetails = localStorage.getItem("seenMoviesDetails");
-			const seenDetails = storedDetails ? JSON.parse(storedDetails) : {};
-			const seenTitles = seenMovies.slice(-20).map((id) => seenDetails[id]).filter(Boolean);
-
 			const res = await fetch("/api/search", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ query, seenMovies: seenTitles, seenMovieIds: seenMovies }),
+				body: JSON.stringify({ query, seenMovies: [], seenMovieIds: seenMovies }),
 			});
 
 			const data = await res.json();
 			if (data.movies) {
 				setMovies(data.movies);
 				setSearchTerms(data.terms || []);
-				sessionStorage.setItem("lastQuery", query);
-				sessionStorage.setItem("lastMovies", JSON.stringify(data.movies));
-				sessionStorage.setItem("lastTerms", JSON.stringify(data.terms || []));
+
+				// Persist new movies to IDB and refresh the default list.
+				await upsertMovies(data.movies);
+				rebuildDefaultList(seenMovies);
 			}
 		} catch (error) {
 			console.error("Search failed:", error);
@@ -106,25 +146,34 @@ export default function Home() {
 		setLoading(true);
 		try {
 			const currentIds = movies.map((m) => m.imdbID);
-			const storedDetails = localStorage.getItem("seenMoviesDetails");
-			const seenDetails = storedDetails ? JSON.parse(storedDetails) : {};
-			const seenTitles = seenMovies.slice(-20).map((id) => seenDetails[id]).filter(Boolean);
 			const allSeenIds = [...seenMovies, ...currentIds];
 
 			const res = await fetch("/api/search", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ query: currentQuery, seenMovies: seenTitles, seenMovieIds: allSeenIds }),
+				body: JSON.stringify({ query: currentQuery, seenMovies: [], seenMovieIds: allSeenIds }),
 			});
 
 			const data = await res.json();
-			if (data.movies) setMovies((prev) => [...prev, ...data.movies]);
+			if (data.movies) {
+				setMovies((prev) => [...prev, ...data.movies]);
+
+				// Persist new movies to IDB and refresh the default list.
+				await upsertMovies(data.movies);
+				rebuildDefaultList(seenMovies);
+			}
 		} catch (error) {
 			console.error("Load more failed:", error);
 		} finally {
 			setLoading(false);
 		}
 	};
+
+	// Which list is currently visible?
+	const activeMovies = hasSearched ? movies : defaultList;
+	const activeLoading = hasSearched ? loading : defaultLoading;
+	const hasResults = activeMovies.length > 0;
+	const isEmpty = !activeLoading && hasResults === false;
 
 	return (
 		<>
@@ -139,7 +188,7 @@ export default function Home() {
 								What are you in<br />the mood for?
 							</h1>
 							<p className="text-muted-foreground text-lg">
-								Describe a feeling, genre, or vibe and we'll find the perfect film.
+								Describe a feeling, genre, or vibe and we&apos;ll find the perfect film.
 							</p>
 						</div>
 					)}
@@ -149,25 +198,26 @@ export default function Home() {
 					{searchTerms.length > 0 && (
 						<div className="flex flex-wrap gap-2 mt-4">
 							{searchTerms.map((term) => (
-								<Badge key={term} variant="outline">
-									{term}
-								</Badge>
+								<Badge key={term} variant="outline">{term}</Badge>
 							))}
 						</div>
 					)}
 				</div>
 
-				{/* Results */}
-				{(movies.length > 0 || loading) && (
+				{/* Movie grid */}
+				{(hasResults || activeLoading) && (
 					<div className="max-w-7xl mx-auto px-6 pb-24">
-						{movies.length > 0 && (
+						{/* Section header */}
+						{hasResults && (
 							<p className="text-sm text-muted-foreground mb-6">
-								{movies.length} films for &ldquo;{currentQuery}&rdquo;
+								{hasSearched
+									? `${movies.length} films for \u201c${currentQuery}\u201d`
+									: `${defaultList.length} films from your searches`}
 							</p>
 						)}
 
 						<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-							{movies.map((movie: Movie, index: number) => (
+							{activeMovies.map((movie: Movie, index: number) => (
 								<div key={movie.imdbID} className="relative group/card">
 									<MovieCard
 										movie={movie}
@@ -189,7 +239,7 @@ export default function Home() {
 							))}
 
 							{/* Loading skeletons */}
-							{loading && movies.length === 0 && Array.from({ length: 12 }).map((_, i) => (
+							{activeLoading && !hasResults && Array.from({ length: 12 }).map((_, i) => (
 								<Card key={i} className="overflow-hidden">
 									<Skeleton className="aspect-[2/3]" />
 									<CardContent className="p-3 space-y-2">
@@ -200,7 +250,8 @@ export default function Home() {
 							))}
 						</div>
 
-						{movies.length > 0 && (
+						{/* Load more — only on search results */}
+						{hasSearched && movies.length > 0 && (
 							<div className="flex justify-center mt-12">
 								<Button
 									variant="outline"
@@ -215,8 +266,17 @@ export default function Home() {
 					</div>
 				)}
 
-				{/* Empty state after search */}
-				{!loading && hasSearched && movies.length === 0 && (
+				{/* Empty state — pre-search with no IDB data yet */}
+				{!hasSearched && isEmpty && (
+					<div className="max-w-3xl mx-auto px-6 py-12 text-center">
+						<p className="text-muted-foreground">
+							Search for a movie to get started. Your history will appear here.
+						</p>
+					</div>
+				)}
+
+				{/* Empty state — after a search found nothing */}
+				{hasSearched && !loading && movies.length === 0 && (
 					<div className="max-w-3xl mx-auto px-6 py-12 text-center">
 						<p className="text-muted-foreground">No films found. Try a different search.</p>
 					</div>

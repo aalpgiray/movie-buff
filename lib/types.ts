@@ -5,6 +5,8 @@ export interface Movie {
   Type: string;
   Poster: string;
   reason?: string;
+  rating?: number;
+  isSeen?: boolean;
 }
 
 export interface MovieDetails extends Movie {

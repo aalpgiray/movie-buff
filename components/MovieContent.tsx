@@ -21,6 +21,19 @@ export async function MovieContent({ params }: MovieContentProps) {
 
             <Suspense
                 fallback={
+                    <div className="mt-8 pt-8 border-t border-border">
+                        <h3 className="font-semibold text-xl mb-4 text-foreground">
+                            Searching for trailer
+                        </h3>
+                        <div className="relative w-full rounded-xl bg-secondary animate-pulse" style={{ paddingBottom: "56.25%" }} />
+                    </div>
+                }
+            >
+                <TrailerSection imdbID={id} />
+            </Suspense>
+
+            <Suspense
+                fallback={
                     <div className="mt-12 pt-8 border-t border-border">
                         <h2 className="font-semibold text-2xl mb-6 text-foreground">
                             Similar Movies
@@ -37,19 +50,6 @@ export async function MovieContent({ params }: MovieContentProps) {
                 }
             >
                 <SimilarMoviesWrapper imdbID={id} />
-            </Suspense>
-
-            <Suspense
-                fallback={
-                    <div className="mt-8 pt-8 border-t border-border">
-                        <h3 className="font-semibold text-xl mb-4 text-foreground">
-                            Searching for trailer
-                        </h3>
-                        <div className="relative w-full rounded-xl bg-secondary animate-pulse" style={{ paddingBottom: "56.25%" }} />
-                    </div>
-                }
-            >
-                <TrailerSection imdbID={id} />
             </Suspense>
 
             <Suspense
