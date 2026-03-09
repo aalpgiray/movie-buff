@@ -51,6 +51,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     isDark
       ? document.documentElement.classList.add("dark")
       : document.documentElement.classList.remove("dark");
+
+    // Keep the PWA status bar / browser chrome in sync with the active theme.
+    const color = isDark ? "#0a0a0a" : "#ffffff";
+    document.querySelectorAll('meta[name="theme-color"]').forEach((el) => {
+      (el as HTMLMetaElement).content = color;
+    });
   };
 
   const cycleTheme = () => {
