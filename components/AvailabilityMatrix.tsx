@@ -303,7 +303,7 @@ export function AvailabilityMatrix({ availability, stickyTop = "top-14" }: Avail
 				<div
 					ref={headerScrollRef}
 					className={cn(
-						"sticky z-10 overflow-visible bg-card border-b border-border rounded-t-lg",
+						"sticky z-10 overflow-x-clip bg-card border-b border-border rounded-t-lg",
 						stickyTop,
 					)}
 				>
@@ -401,7 +401,7 @@ export function AvailabilityMatrix({ availability, stickyTop = "top-14" }: Avail
 													<span className="text-muted-foreground/40 block">-</span>
 												)}
 											</div>
-										);
+											);
 									})}
 								</React.Fragment>
 							);
