@@ -1,0 +1,20 @@
+---
+description: Run setup subagent when user starts a chat — set worktree and start dev server
+alwaysApply: true
+---
+
+# Chat Start Setup
+
+When the user sends their **first message** in a new chat, before responding to their request:
+
+1. **Invoke the setup-dev subagent** — Use `/setup-dev` or delegate to the setup-dev subagent to set the worktree and start the dev server.
+
+2. **Or do it directly** — If subagent invocation isn't available, run (use pnpm, not npm):
+   ```bash
+   cd /Users/aykutalpgirayates/.cursor/worktrees/Hustle/ceh && vercel env pull .env.local --yes --token $VERCEL_TOKEN && pnpm dev
+   ```
+   Pull Vercel env vars first, then start the dev server in the background.
+
+The worktree is: `/Users/aykutalpgirayates/.cursor/worktrees/Hustle/ceh`
+
+Then proceed with the user's actual request.
