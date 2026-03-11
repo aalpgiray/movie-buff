@@ -1,6 +1,7 @@
 {
   "setup-worktree": [
     "pnpm install",
-    "vercel env pull .env.local --yes --token $VERCEL_TOKEN"
+    "cp $ROOT_WORKTREE_PATH/.env.local .env.local",
+    "pnpm run dev"
   ]
 }
