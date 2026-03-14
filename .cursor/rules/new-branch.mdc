@@ -1,28 +1,21 @@
 ---
-description: When user asks to create a new branch — run pnpm branch (never manual steps)
+description: When user asks to create a new branch — run pnpm branch ONLY, never manual steps
 globs: 
-alwaysApply: false
+alwaysApply: true
 ---
 
 # New Branch
 
-When the user asks to **create a new branch** (e.g. "create new branch feature/xyz", "new branch auth", "make branch xxx"):
+Main chat orchestrates. User says "create branch X" → run this, nothing else.
 
-**ALWAYS run the script. NEVER give manual instructions** (File → Open Folder, freeing ports, etc.).
+```bash
+cd /Users/aykutalpgirayates/workspace/Hustle && pnpm branch <branch-name>
+```
 
-1. Run from the **main repo** (workspace root):
-   ```bash
-   cd /Users/aykutalpgirayates/workspace/Hustle && pnpm branch <branch-name>
-   ```
+**That's it.** Portree handles ports. Script: worktree, install, env, proxy, dev server, opens new Cursor window. User sees new window open. Done.
 
-2. The script does everything:
-   - Creates the branch as a git worktree
-   - Runs `pnpm ready` (install, env, Portree proxy + dev server)
-   - Opens a new Cursor window via `cursor <path>`
-   - Prints the Portree URL (e.g. http://feature-xyz.localhost:3000)
+**Do NOT:** manual steps, git worktree add, free ports, pnpm ready, open folder instructions.
 
-3. As your **final message** to the user, include:
-   - The **URL** (e.g. `http://feature-watch-list-categories.localhost:3000`)
-   - Short instruction: "In the new Cursor window: open Cursor browser (check icon) and visit the URL above to start prompting."
+**Reply:** "Done. New Cursor window should be open. In it: Cursor browser (check icon) → [URL from output]"
 
-4. Extract the branch name from the user's message. Use a valid branch name (e.g. `feature/xyz`, `fix/auth`). If they say "xxx" use `xxx` or infer `feature/xxx`.
+**Branch name:** From user message. `feature/xyz`, `fix/auth`, or `feature/xxx` if they say "xxx".

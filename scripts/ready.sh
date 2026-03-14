@@ -18,7 +18,7 @@ else
   cp "$MAIN_REPO/.env.local" .env.local 2>/dev/null || { echo "No .env.local in main repo; run vercel env pull there first"; exit 1; }
 fi
 
-# Stop any existing proxy (from main or elsewhere), then start from here
+# Portree handles ports. Stop any existing proxy, start from this worktree.
 (cd "$MAIN_REPO" && portree proxy stop 2>/dev/null) || true
 echo "→ portree proxy start"
 portree proxy start
