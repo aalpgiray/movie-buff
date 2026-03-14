@@ -3,6 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "ready": "bash scripts/ready.sh",
+    "branch": "bash scripts/new-branch.sh",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",

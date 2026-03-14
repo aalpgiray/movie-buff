@@ -1,7 +1,5 @@
 {
   "setup-worktree": [
-    "pnpm install",
-    "cp $ROOT_WORKTREE_PATH/.env.local .env.local",
-    "pnpm run dev"
+    "pnpm ready"
   ]
 }

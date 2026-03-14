@@ -1,0 +1,21 @@
+---
+description: When user asks to create a new branch — run pnpm branch and open in new Cursor
+globs: 
+alwaysApply: false
+---
+
+# New Branch
+
+When the user asks to **create a new branch** (e.g. "create new branch feature/xyz", "new branch auth", "make branch xxx"):
+
+1. Run from the **main repo** (workspace root):
+   ```bash
+   cd /Users/aykutalpgirayates/workspace/Hustle && pnpm branch <branch-name>
+   ```
+
+2. This will:
+   - Create the branch as a git worktree
+   - Run `pnpm ready` (install, env, proxy, dev server)
+   - Open a new Cursor window for that worktree
+
+3. Extract the branch name from the user's message. Use a valid branch name (e.g. `feature/xyz`, `fix/auth`). If they say "xxx" use `xxx` or infer a prefix like `feature/xxx`.
