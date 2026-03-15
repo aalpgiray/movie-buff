@@ -1,0 +1,33 @@
+# portree - Git Worktree Server Manager configuration
+# See: https://github.com/fairy-pitta/portree
+#
+# PARALLEL WORK (multiple worktrees): Run from main repo
+#   cd /Users/aykutalpgirayates/workspace/Hustle
+#   portree proxy start && portree up --all
+#   Access: main.localhost:3000, <commit-slug>.localhost:3000
+#
+# SINGLE WORKTREE: Run from that worktree
+#   cd /path/to/worktree && portree proxy start && portree up
+#   (Proxy must run from same dir as portree up - state is per-directory)
+
+# --- Service definitions ---
+# Define services to run per worktree.
+# Each service has its own command, directory, port range, and proxy port.
+
+[services.frontend]
+command = "pnpm run dev"
+dir = ""                                # relative to worktree root (empty = root)
+port_range = { min = 3100, max = 3199 } # port allocation range for this service
+proxy_port = 3000                        # proxy listens on this port
+
+# --- Global environment variables ---
+[env]
+NODE_ENV = "development"
+
+# --- Per-worktree overrides (optional) ---
+# [worktrees.main]
+# services.frontend.port = 3100       # fixed port
+#
+# [worktrees."feature/auth"]
+# services.backend.command = "source .venv/bin/activate && python manage.py runserver --settings=myapp.settings_auth 0.0.0.0:$PORT"
+# services.backend.env = { DEBUG = "1" }

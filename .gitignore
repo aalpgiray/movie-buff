@@ -20,6 +20,9 @@
 # production
 /build
 
+# portree (worktree server manager runtime state)
+.portree/
+
 # misc
 .DS_Store
 *.pem

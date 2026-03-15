@@ -1,0 +1,21 @@
+---
+description: When user asks to create a new branch — run pnpm branch ONLY, never manual steps
+globs: 
+alwaysApply: true
+---
+
+# New Branch
+
+Main chat orchestrates. User says "create branch X" → run this, nothing else.
+
+```bash
+cd /Users/aykutalpgirayates/workspace/Hustle && pnpm branch <branch-name>
+```
+
+**That's it.** Portree handles ports. Script: worktree, install, env, proxy, dev server, opens new Cursor window. User sees new window open. Done.
+
+**Do NOT:** manual steps, git worktree add, free ports, pnpm ready, open folder instructions.
+
+**Reply:** "Done. New Cursor window should be open. In it: Cursor browser (check icon) → [URL from output]"
+
+**Branch name:** From user message. `feature/xyz`, `fix/auth`, or `feature/xxx` if they say "xxx".

@@ -3,6 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "ready": "bash scripts/ready.sh",
+    "branch": "bash scripts/new-branch.sh",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
@@ -27,10 +29,14 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitest/coverage-v8": "^4.1.0",
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.0.10",
+    "fake-indexeddb": "^6.2.5",
+    "fast-check": "^4.6.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.0"
   }
 }

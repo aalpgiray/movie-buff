@@ -4,7 +4,9 @@ import { Eye, EyeOff, Bookmark, BookmarkCheck, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { upsertMovie, getList, setList } from "@/lib/movie-db";
+import { upsertMovie, getList, setList, getCategories } from "@/lib/movie-db";
+import type { WatchlistCategory } from "@/lib/types";
+import CategoryAssignControl from "@/components/CategoryAssignControl";
 
 interface MovieDetailActionsProps {
   imdbID: string;
@@ -21,15 +23,23 @@ export function MovieDetailActions({ imdbID, title, year, poster, type, imdbRati
   const [isInWatchlist, setIsInWatchlist] = useState(false);
   const [seenFeedback, setSeenFeedback] = useState(false);
   const [watchlistFeedback, setWatchlistFeedback] = useState(false);
+  const [categories, setCategories] = useState<WatchlistCategory[]>([]);
 
   useEffect(() => {
-    Promise.all([getList("seenMovies"), getList("watchlistMovies")]).then(
-      ([seen, watchlist]) => {
+    Promise.all([getList("seenMovies"), getList("watchlistMovies"), getCategories()]).then(
+      ([seen, watchlist, cats]) => {
         setIsSeen(seen.includes(imdbID));
-        setIsInWatchlist(watchlist.includes(imdbID));
+        const inWatchlist = watchlist.includes(imdbID);
+        setIsInWatchlist(inWatchlist);
+        if (inWatchlist) setCategories(cats);
       }
     );
   }, [imdbID]);
+
+  const refreshCategories = async () => {
+    const cats = await getCategories();
+    setCategories(cats);
+  };
 
   const flash = (setter: (v: boolean) => void) => {
     setter(true);
@@ -70,11 +80,18 @@ export function MovieDetailActions({ imdbID, title, year, poster, type, imdbRati
 
     setIsInWatchlist(adding);
     flash(setWatchlistFeedback);
+    if (adding) {
+      const cats = await getCategories();
+      setCategories(cats);
+    } else {
+      setCategories([]);
+    }
     window.dispatchEvent(new Event("listsUpdated"));
   };
 
   return (
-    <div className="flex gap-3 mt-4">
+    <div className="flex flex-col gap-3 mt-4">
+      <div className="flex gap-3">
       <Button
         onClick={toggleWatchlist}
         variant={isInWatchlist ? "default" : "secondary"}
@@ -111,6 +128,14 @@ export function MovieDetailActions({ imdbID, title, year, poster, type, imdbRati
           : (isSeen ? "Watched" : "Mark as Watched")
         }
       </Button>
+      </div>
+      {isInWatchlist && (
+        <CategoryAssignControl
+          imdbID={imdbID}
+          categories={categories}
+          onAssignmentChange={refreshCategories}
+        />
+      )}
     </div>
   );
 }

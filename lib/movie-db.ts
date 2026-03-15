@@ -13,7 +13,7 @@
  * are preserved when new search results arrive for the same imdbID.
  */
 
-import type { Movie } from "@/lib/types";
+import type { Movie, WatchlistCategory } from "@/lib/types";
 
 const DB_NAME = "movie-buff";
 const DB_VERSION = 2;
@@ -256,4 +256,115 @@ export function buildDefaultList(
   }
 
   return result;
+}
+
+// ---------------------------------------------------------------------------
+// Category helpers
+// ---------------------------------------------------------------------------
+
+const CATEGORIES_KEY = "watchlistCategories";
+
+/** Read all watchlist categories. Returns [] if the key has never been written. */
+export async function getCategories(): Promise<WatchlistCategory[]> {
+  const db = await openDB();
+
+  const result = await new Promise<WatchlistCategory[]>((resolve, reject) => {
+    const tx = db.transaction(LISTS_STORE, "readonly");
+    const store = tx.objectStore(LISTS_STORE);
+    const req = store.get(CATEGORIES_KEY);
+    req.onsuccess = () => resolve((req.result as WatchlistCategory[]) ?? []);
+    req.onerror = () => reject(req.error);
+  });
+
+  db.close();
+  return result;
+}
+
+/** Persist the full categories array atomically. */
+export async function setCategories(categories: WatchlistCategory[]): Promise<void> {
+  const db = await openDB();
+
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(LISTS_STORE, "readwrite");
+    const store = tx.objectStore(LISTS_STORE);
+    store.put(categories, CATEGORIES_KEY);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+
+  db.close();
+}
+
+/** Validate a category name: 1–50 chars, case-insensitive uniqueness against existing categories. */
+function validateCategoryName(name: string, existing: WatchlistCategory[], excludeId?: string): void {
+  if (!name || name.length < 1) {
+    throw new Error("Category name must be at least 1 character.");
+  }
+  if (name.length > 50) {
+    throw new Error("Category name must be 50 characters or fewer.");
+  }
+  const lower = name.toLowerCase();
+  const duplicate = existing.find(
+    (c) => c.name.toLowerCase() === lower && c.id !== excludeId,
+  );
+  if (duplicate) {
+    throw new Error(`A category named "${duplicate.name}" already exists.`);
+  }
+}
+
+/** Create a new category. Validates name (1–50 chars, case-insensitive uniqueness). */
+export async function createCategory(name: string): Promise<WatchlistCategory> {
+  const categories = await getCategories();
+  validateCategoryName(name, categories);
+  const newCategory: WatchlistCategory = {
+    id: crypto.randomUUID(),
+    name,
+    movieIds: [],
+  };
+  await setCategories([...categories, newCategory]);
+  return newCategory;
+}
+
+/** Rename an existing category. Validates same rules as createCategory. */
+export async function renameCategory(id: string, newName: string): Promise<void> {
+  const categories = await getCategories();
+  validateCategoryName(newName, categories, id);
+  const updated = categories.map((c) => (c.id === id ? { ...c, name: newName } : c));
+  await setCategories(updated);
+}
+
+/** Delete a category by id. Does NOT remove movies from the watchlist. */
+export async function deleteCategory(id: string): Promise<void> {
+  const categories = await getCategories();
+  await setCategories(categories.filter((c) => c.id !== id));
+}
+
+/** Assign a movie to a category (idempotent — no duplicate imdbIDs). */
+export async function assignMovieToCategory(imdbID: string, categoryId: string): Promise<void> {
+  const categories = await getCategories();
+  const updated = categories.map((c) => {
+    if (c.id !== categoryId) return c;
+    if (c.movieIds.includes(imdbID)) return c;
+    return { ...c, movieIds: [...c.movieIds, imdbID] };
+  });
+  await setCategories(updated);
+}
+
+/** Unassign a movie from a category. */
+export async function unassignMovieFromCategory(imdbID: string, categoryId: string): Promise<void> {
+  const categories = await getCategories();
+  const updated = categories.map((c) =>
+    c.id === categoryId ? { ...c, movieIds: c.movieIds.filter((id) => id !== imdbID) } : c,
+  );
+  await setCategories(updated);
+}
+
+/** Remove a movie from all categories. Defensive — safe if movie is in no categories. */
+export async function removeMovieFromAllCategories(imdbID: string): Promise<void> {
+  const categories = await getCategories();
+  const updated = categories.map((c) => ({
+    ...c,
+    movieIds: c.movieIds.filter((id) => id !== imdbID),
+  }));
+  await setCategories(updated);
 }

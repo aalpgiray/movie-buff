@@ -53,3 +53,9 @@ export interface CountryMetadata {
   name: string;
   flagEmoji: string;
 }
+
+export interface WatchlistCategory {
+  id: string;
+  name: string;
+  movieIds: string[];
+}
