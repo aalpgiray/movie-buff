@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { searchMovies } from "@/lib/omdb";
-import { getSearchQueriesFromMood, getSimilarMovies } from "@/lib/ai";
+import { searchMovies, getMovieDetails } from "@/lib/omdb";
+import { getSearchQueriesFromMood } from "@/lib/ai";
 import type { Movie, MovieRecommendation } from "@/lib/types";
 
 interface RequestBody {
@@ -34,20 +34,26 @@ export async function POST(req: Request) {
 				);
 				
 				if (unseen.length >= 3) {
-					// Return these results directly without calling AI
+					// Fetch details for each movie to get ratings
+					const detailedMovies = await Promise.all(
+						unseen.slice(0, 10).map(async (m: Movie) => {
+							const details = await getMovieDetails(m.imdbID);
+							return details ? { ...details, reason: "Direct search result" } : { ...m, reason: "Direct search result" };
+						})
+					);
 					return NextResponse.json({
 						terms: [query],
-						movies: unseen.slice(0, 10).map((m: Movie) => ({
-							...m,
-							reason: "Direct search result"
-						})),
+						movies: detailedMovies,
 					});
 				} else if (unseen.length > 0) {
-					// Store these for later but still call AI for more recommendations
-					directMovies = unseen.map((m: Movie) => ({
-						...m,
-						reason: "Direct search result"
-					}));
+					// Fetch details for each movie to get ratings
+					const detailedMovies = await Promise.all(
+						unseen.map(async (m: Movie) => {
+							const details = await getMovieDetails(m.imdbID);
+							return details ? { ...details, reason: "Direct search result" } : { ...m, reason: "Direct search result" };
+						})
+					);
+					directMovies = detailedMovies;
 				}
 			}
 		} catch (error) {
@@ -79,7 +85,12 @@ export async function POST(req: Request) {
 						(m: Movie) => m.Title.toLowerCase() === title.toLowerCase(),
 					);
 					const movie = exactMatch || data.Search[0];
-					return { ...movie, reason: rec.reason };
+					
+					// Fetch full details to get imdbRating
+					const details = await getMovieDetails(movie.imdbID);
+					const fullMovie = details || movie;
+					
+					return { ...fullMovie, reason: rec.reason };
 				}
 				return null;
 			} catch (error) {
