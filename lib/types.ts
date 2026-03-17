@@ -6,7 +6,6 @@ export interface Movie {
   Poster: string;
   reason?: string;
   rating?: number;
-  imdbRating?: string;
   isSeen?: boolean;
 }
 
