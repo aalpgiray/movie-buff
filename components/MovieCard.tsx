@@ -1,6 +1,6 @@
 "use client";
 
-import { Bookmark, BookmarkCheck, Eye, EyeOff, Film } from "lucide-react";
+import { Bookmark, BookmarkCheck, Eye, EyeOff, Film, Star } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
@@ -58,7 +58,15 @@ export function MovieCard({
 					<h3 className="font-medium text-sm leading-snug line-clamp-2 text-card-foreground">
 						{movie.Title}
 					</h3>
-					<p className="text-xs text-muted-foreground mt-0.5">{movie.Year}</p>
+					<div className="flex items-center justify-between mt-0.5">
+						<p className="text-xs text-muted-foreground">{movie.Year}</p>
+						{movie.imdbRating && (
+							<div className="flex items-center gap-0.5 text-xs text-yellow-500">
+								<Star className="h-3 w-3 fill-current" />
+								<span className="font-medium">{movie.imdbRating}</span>
+							</div>
+						)}
+					</div>
 				</CardContent>
 			</Link>
 
