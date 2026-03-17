@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 @theme inline {
-  --font-sans: 'Inter', 'Inter Fallback';
-  --font-mono: 'JetBrains Mono', monospace;
+  --font-sans: 'Courier New', 'Courier', monospace;
+  --font-mono: 'Courier New', 'Courier', monospace;
   --radius: 0.75rem;
 
   --color-background: hsl(var(--background));
@@ -76,7 +76,7 @@
   }
 
   body {
-    @apply bg-background text-foreground font-sans antialiased;
+    @apply bg-background text-foreground font-mono antialiased;
   }
 
   /* Fill the iOS safe-area insets (status bar, home indicator) with the
@@ -84,6 +84,23 @@
   html {
     background-color: hsl(var(--background));
   }
+}
+
+/* Cyberpunk glow effects */
+.glow-text {
+  text-shadow: 0 0 4px currentColor;
+}
+
+.glow-border {
+  box-shadow: 0 0 8px currentColor;
+}
+
+.glow-card {
+  box-shadow: 0 0 16px rgba(0, 255, 0, 0.1);
+}
+
+.dark .glow-card {
+  box-shadow: 0 0 16px rgba(0, 255, 0, 0.2);
 }
 
 /* Prevents overflow-x wrapper from creating block scroll container (breaks sticky).

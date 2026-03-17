@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { searchMovies } from "@/lib/omdb";
-import { getSearchQueriesFromMood } from "@/lib/openai";
+import { getSearchQueriesFromMood, getSimilarMovies } from "@/lib/ai";
 import type { Movie, MovieRecommendation } from "@/lib/types";
 
 interface RequestBody {
@@ -60,7 +60,7 @@ export async function POST(req: Request) {
 			seenTitles,
 		);
 
-		if (!Array.isArray(movieRecommendations)) {
+		if (!Array.isArray(movieRecommendations) || movieRecommendations.length === 0) {
 			console.error("Expected array from AI but got:", movieRecommendations);
 			return NextResponse.json({
 				terms: [],
@@ -68,7 +68,7 @@ export async function POST(req: Request) {
 			});
 		}
 
-		// Search OMDb for each recommendation
+		// Search OMDb for each recommendation in parallel
 		const moviePromises = movieRecommendations.map(async (rec: MovieRecommendation) => {
 			const title = rec.title;
 			try {
@@ -88,8 +88,10 @@ export async function POST(req: Request) {
 			}
 		});
 
-		const searchResults = await Promise.all(moviePromises);
-		let allMovies: Array<Movie & { reason: string }> = searchResults.filter((m): m is (Movie & { reason: string }) => m !== null);
+		const searchResults = await Promise.allSettled(moviePromises);
+		let allMovies: Array<Movie & { reason: string }> = searchResults
+			.filter((r): r is PromiseFulfilledResult<Movie & { reason: string }> => r.status === 'fulfilled')
+			.map(r => r.value);
 
 		// Filter out movies already seen
 		allMovies = allMovies.filter(
@@ -105,9 +107,10 @@ export async function POST(req: Request) {
 			allMovies = [...directMovies, ...allMovies];
 		}
 
+		// Return up to 20 movies
 		return NextResponse.json({
 			terms: movieRecommendations.map((r: MovieRecommendation) => r.title),
-			movies: allMovies,
+			movies: allMovies.slice(0, 20),
 		});
 	} catch (error) {
 		console.error("Search error:", error);

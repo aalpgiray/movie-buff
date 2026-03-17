@@ -1,5 +1,5 @@
 import { searchMovies } from "@/lib/omdb";
-import { getSimilarMovies } from "@/lib/openai";
+import { getSimilarMovies } from "@/lib/ai";
 import { SimilarMoviesList } from "@/components/SimilarMoviesList";
 import type { Movie } from "@/lib/types";
 
