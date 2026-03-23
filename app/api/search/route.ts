@@ -9,6 +9,18 @@ interface RequestBody {
 	seenMovieIds?: string[];
 }
 
+/**
+ * POST /api/search
+ * 
+ * Search for movies based on a query or mood.
+ * 
+ * This endpoint implements a two-tier search strategy:
+ * 1. Direct search: Attempts to find exact matches in OMDB
+ * 2. AI-powered fallback: Uses AI to generate mood-based search terms if direct search yields fewer than 3 results
+ * 
+ * @param req - Request containing { query, seenMovies?, seenMovieIds? }
+ * @returns Object with { terms: string[], movies: Movie[] } containing search results
+ */
 export async function POST(req: Request) {
 	try {
 		const { query, seenMovies, seenMovieIds: seenMoviesIds } = (await req.json()) as RequestBody;
