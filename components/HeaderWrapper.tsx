@@ -23,7 +23,6 @@ export function HeaderWrapper() {
     // Keep counts in sync when detail page toggles lists
     window.addEventListener("listsUpdated", read);
     return () => window.removeEventListener("listsUpdated", read);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return <Header watchlistCount={watchlistCount} watchedCount={watchedCount} />;

@@ -19,7 +19,7 @@ for (const check of checks) {
     execSync(check.cmd, { stdio: 'inherit' });
     console.log(`\n✅ ${check.name} passed`);
     passed++;
-  } catch (error) {
+  } catch {
     console.log(`\n❌ ${check.name} failed`);
     failed++;
   }

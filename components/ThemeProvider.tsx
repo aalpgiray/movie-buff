@@ -27,6 +27,21 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<ThemeMode>("auto");
   const [systemPrefersDark, setSystemPrefersDark] = useState(true);
 
+  const applyTheme = (t: ThemeMode, prefersDark: boolean) => {
+    const isDark = t === "dark" || (t === "auto" && prefersDark);
+    if (isDark) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+
+    // Keep the PWA status bar / browser chrome in sync with the active theme.
+    const color = isDark ? "#0a0a0a" : "#ffffff";
+    document.querySelectorAll('meta[name="theme-color"]').forEach((el) => {
+      (el as HTMLMetaElement).content = color;
+    });
+  };
+
   useEffect(() => {
     const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
     setSystemPrefersDark(prefersDark);
@@ -45,19 +60,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     mediaQuery.addEventListener("change", handleChange);
     return () => mediaQuery.removeEventListener("change", handleChange);
   }, []);
-
-  const applyTheme = (t: ThemeMode, prefersDark: boolean) => {
-    const isDark = t === "dark" || (t === "auto" && prefersDark);
-    isDark
-      ? document.documentElement.classList.add("dark")
-      : document.documentElement.classList.remove("dark");
-
-    // Keep the PWA status bar / browser chrome in sync with the active theme.
-    const color = isDark ? "#0a0a0a" : "#ffffff";
-    document.querySelectorAll('meta[name="theme-color"]').forEach((el) => {
-      (el as HTMLMetaElement).content = color;
-    });
-  };
 
   const cycleTheme = () => {
     const themes: ThemeMode[] = ["auto", "light", "dark"];

@@ -152,8 +152,11 @@ export function AvailabilityMatrix({ availability, stickyTop = "top-14" }: Avail
 		};
 	}, [availability, userCountry]);
 
+	// Initialize selected platforms only once when allPlatforms becomes available
+	const hasInitialized = useRef(false);
 	useEffect(() => {
-		if (selectedPlatforms.length === 0 && allPlatforms.length > 0) {
+		if (!hasInitialized.current && allPlatforms.length > 0) {
+			hasInitialized.current = true;
 			const defaults = ["netflix", "prime", "disney", "hbo", "apple"];
 			const initial = allPlatforms
 				.filter((p) => defaults.includes(p.id))
@@ -165,7 +168,7 @@ export function AvailabilityMatrix({ availability, stickyTop = "top-14" }: Avail
 				setSelectedPlatforms(initial);
 			}
 		}
-	}, [allPlatforms, selectedPlatforms]);
+	}, [allPlatforms]);
 
 	if (!availability || Object.keys(availability).length === 0) {
 		return (
