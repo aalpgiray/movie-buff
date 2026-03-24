@@ -6,9 +6,11 @@
     "ready": "bash scripts/ready.sh",
     "branch": "bash scripts/new-branch.sh",
     "dev": "next dev",
-    "build": "next build",
+    "build": "npm run lint && npm run test && next build",
+    "build:only": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "vitest run"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
