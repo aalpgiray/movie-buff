@@ -71,46 +71,6 @@ export function AvailabilityMatrix({ availability, stickyTop = "top-14" }: Avail
 	const headerScrollRef = useRef<HTMLDivElement>(null);
 	const bodyScrollRef = useRef<HTMLDivElement>(null);
 
-	// Sync horizontal scroll: header has NO overflow (so sticky works), transform inner grid to mirror body
-	useEffect(() => {
-		const header = headerScrollRef.current;
-		const body = bodyScrollRef.current;
-		if (!header || !body) return;
-		const syncFromBody = () => {
-			const inner = header.firstElementChild as HTMLElement | null;
-			if (inner) inner.style.transform = `translateX(-${body.scrollLeft}px)`;
-		};
-		body.addEventListener("scroll", syncFromBody);
-		syncFromBody(); // initial sync
-		return () => body.removeEventListener("scroll", syncFromBody);
-	}, [availability, selectedPlatforms]);
-
-	useEffect(() => {
-		const detectCountry = async () => {
-			try {
-				const response = await fetch("https://ipapi.co/json/");
-				if (response.ok) {
-					const data = await response.json();
-					if (data.country_code) {
-						setUserCountry(data.country_code.toLowerCase());
-						return;
-					}
-				}
-			} catch (error) {
-				console.warn("Failed to detect country from IP:", error);
-			}
-
-			if (typeof window !== "undefined" && navigator.language) {
-				const region = navigator.language.split("-")[1];
-				if (region) {
-					setUserCountry(region.toLowerCase());
-				}
-			}
-		};
-
-		detectCountry();
-	}, []);
-
 	const countryLookup = useMemo(() => {
 		const map = new Map<string, { name: string; flag: string }>();
 		Object.entries(COUNTRY_MAP).forEach(([code, info]) => {
@@ -152,23 +112,58 @@ export function AvailabilityMatrix({ availability, stickyTop = "top-14" }: Avail
 		};
 	}, [availability, userCountry]);
 
-	// Initialize selected platforms only once when allPlatforms becomes available
-	const hasInitialized = useRef(false);
-	useEffect(() => {
-		if (!hasInitialized.current && allPlatforms.length > 0) {
-			hasInitialized.current = true;
-			const defaults = ["netflix", "prime", "disney", "hbo", "apple"];
-			const initial = allPlatforms
-				.filter((p) => defaults.includes(p.id))
-				.map((p) => p.id);
-
-			if (initial.length === 0) {
-				setSelectedPlatforms(allPlatforms.slice(0, 5).map((p) => p.id));
-			} else {
-				setSelectedPlatforms(initial);
-			}
-		}
+	// Compute initial platforms - memoized so it only runs when allPlatforms changes
+	const initialPlatforms = useMemo(() => {
+		if (allPlatforms.length === 0) return [];
+		const defaults = ["netflix", "prime", "disney", "hbo", "apple"];
+		const initial = allPlatforms
+			.filter((p) => defaults.includes(p.id))
+			.map((p) => p.id);
+		return initial.length > 0 ? initial : allPlatforms.slice(0, 5).map((p) => p.id);
 	}, [allPlatforms]);
+
+	// Use initialPlatforms as the actual selected if not yet initialized
+	const effectivePlatforms = selectedPlatforms.length > 0 ? selectedPlatforms : initialPlatforms;
+
+	// Sync horizontal scroll: header has NO overflow (so sticky works), transform inner grid to mirror body
+	useEffect(() => {
+		const header = headerScrollRef.current;
+		const body = bodyScrollRef.current;
+		if (!header || !body) return;
+		const syncFromBody = () => {
+			const inner = header.firstElementChild as HTMLElement | null;
+			if (inner) inner.style.transform = `translateX(-${body.scrollLeft}px)`;
+		};
+		body.addEventListener("scroll", syncFromBody);
+		syncFromBody(); // initial sync
+		return () => body.removeEventListener("scroll", syncFromBody);
+	}, [availability, effectivePlatforms]);
+
+	useEffect(() => {
+		const detectCountry = async () => {
+			try {
+				const response = await fetch("https://ipapi.co/json/");
+				if (response.ok) {
+					const data = await response.json();
+					if (data.country_code) {
+						setUserCountry(data.country_code.toLowerCase());
+						return;
+					}
+				}
+			} catch (error) {
+				console.warn("Failed to detect country from IP:", error);
+			}
+
+			if (typeof window !== "undefined" && navigator.language) {
+				const region = navigator.language.split("-")[1];
+				if (region) {
+					setUserCountry(region.toLowerCase());
+				}
+			}
+		};
+
+		detectCountry();
+	}, []);
 
 	if (!availability || Object.keys(availability).length === 0) {
 		return (
@@ -179,8 +174,9 @@ export function AvailabilityMatrix({ availability, stickyTop = "top-14" }: Avail
 	}
 
 	const togglePlatform = (id: string) => {
-		setSelectedPlatforms((prev) =>
-			prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id],
+		const current = effectivePlatforms;
+		setSelectedPlatforms(
+			current.includes(id) ? current.filter((p) => p !== id) : [...current, id],
 		);
 	};
 
@@ -222,7 +218,7 @@ export function AvailabilityMatrix({ availability, stickyTop = "top-14" }: Avail
 						{allPlatforms.map((platform) => (
 							<Button
 								key={platform.id}
-								variant={selectedPlatforms.includes(platform.id) ? "default" : "outline"}
+								variant={effectivePlatforms.includes(platform.id) ? "default" : "outline"}
 								size="sm"
 								onClick={() => togglePlatform(platform.id)}
 								className="rounded-full"
@@ -243,7 +239,7 @@ export function AvailabilityMatrix({ availability, stickyTop = "top-14" }: Avail
 					};
 					const isUserCountry = countryCode === userCountry;
 
-					const platformsWithOptions = selectedPlatforms
+					const platformsWithOptions = effectivePlatforms
 						.map((platformId) => ({
 							platformId,
 							name: allPlatforms.find((p) => p.id === platformId)?.name ?? platformId,
@@ -313,16 +309,16 @@ export function AvailabilityMatrix({ availability, stickyTop = "top-14" }: Avail
 					<div
 						className="grid w-full text-sm text-left items-stretch"
 						style={{
-							gridTemplateColumns: `minmax(240px, 1fr) ${selectedPlatforms.map(() => "minmax(240px, 1fr)").join(" ")}`,
+							gridTemplateColumns: `minmax(240px, 1fr) ${effectivePlatforms.map(() => "minmax(240px, 1fr)").join(" ")}`,
 							gridAutoRows: "60px",
 						}}
 					>
 						<div className="p-4 font-medium text-card-foreground border-r border-border flex items-center">
 							Country
 						</div>
-						{selectedPlatforms.map((platformId, idx) => {
+						{effectivePlatforms.map((platformId, idx) => {
 							const platform = allPlatforms.find((p) => p.id === platformId);
-							const isLast = idx === selectedPlatforms.length - 1;
+							const isLast = idx === effectivePlatforms.length - 1;
 							return (
 								<div
 									key={platformId}
@@ -342,7 +338,7 @@ export function AvailabilityMatrix({ availability, stickyTop = "top-14" }: Avail
 					<div
 						className="grid w-full text-sm text-left items-stretch"
 						style={{
-							gridTemplateColumns: `minmax(240px, 1fr) ${selectedPlatforms.map(() => "minmax(240px, 1fr)").join(" ")}`,
+							gridTemplateColumns: `minmax(240px, 1fr) ${effectivePlatforms.map(() => "minmax(240px, 1fr)").join(" ")}`,
 							gridAutoRows: "60px",
 						}}
 					>
@@ -371,7 +367,7 @@ export function AvailabilityMatrix({ availability, stickyTop = "top-14" }: Avail
 											</Badge>
 										)}
 									</div>
-									{selectedPlatforms.map((platformId, pIdx) => {
+									{effectivePlatforms.map((platformId, pIdx) => {
 										const options = getOptions(countryCode, platformId);
 										const hasOptions = options.length > 0;
 										return (
@@ -379,7 +375,7 @@ export function AvailabilityMatrix({ availability, stickyTop = "top-14" }: Avail
 												key={`${countryCode}-${platformId}`}
 												className={cn(
 													"p-4 text-center border-b flex items-center justify-center",
-													pIdx < selectedPlatforms.length - 1 && "border-r border-border",
+													pIdx < effectivePlatforms.length - 1 && "border-r border-border",
 													isUserCountry ? "bg-primary/5 hover:bg-primary/10" : "hover:bg-muted/50",
 												)}
 											>

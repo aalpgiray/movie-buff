@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useSyncExternalStore, useCallback, useState } from "react";
 
 type ThemeMode = "auto" | "light" | "dark";
 
@@ -22,12 +22,58 @@ export function useTheme() {
   return useContext(ThemeContext);
 }
 
+// External store for system dark mode preference
+function subscribeToMediaQuery(callback: () => void) {
+  const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+  mediaQuery.addEventListener("change", callback);
+  return () => mediaQuery.removeEventListener("change", callback);
+}
+
+function getSystemPrefersDark() {
+  return window.matchMedia("(prefers-color-scheme: dark)").matches;
+}
+
+function getSystemPrefersDarkServer() {
+  return true; // Default to dark on server
+}
+
+// External store for theme from localStorage
+let themeListeners: Array<() => void> = [];
+function subscribeToTheme(callback: () => void) {
+  themeListeners.push(callback);
+  return () => {
+    themeListeners = themeListeners.filter((l) => l !== callback);
+  };
+}
+
+function getThemeSnapshot(): ThemeMode {
+  return (localStorage.getItem("theme") as ThemeMode) || "auto";
+}
+
+function getThemeServerSnapshot(): ThemeMode {
+  return "auto";
+}
+
+function notifyThemeListeners() {
+  themeListeners.forEach((l) => l());
+}
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
-  const [theme, setTheme] = useState<ThemeMode>("auto");
-  const [systemPrefersDark, setSystemPrefersDark] = useState(true);
+  
+  const systemPrefersDark = useSyncExternalStore(
+    subscribeToMediaQuery,
+    getSystemPrefersDark,
+    getSystemPrefersDarkServer
+  );
+  
+  const theme = useSyncExternalStore(
+    subscribeToTheme,
+    getThemeSnapshot,
+    getThemeServerSnapshot
+  );
 
-  const applyTheme = (t: ThemeMode, prefersDark: boolean) => {
+  const applyTheme = useCallback((t: ThemeMode, prefersDark: boolean) => {
     const isDark = t === "dark" || (t === "auto" && prefersDark);
     if (isDark) {
       document.documentElement.classList.add("dark");
@@ -40,26 +86,13 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     document.querySelectorAll('meta[name="theme-color"]').forEach((el) => {
       (el as HTMLMetaElement).content = color;
     });
-  };
-
-  useEffect(() => {
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    setSystemPrefersDark(prefersDark);
-    const saved = localStorage.getItem("theme") as ThemeMode | null;
-    const initial = saved || "auto";
-    setTheme(initial);
-    applyTheme(initial, prefersDark);
-    setMounted(true);
-
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-    const handleChange = (e: MediaQueryListEvent) => {
-      setSystemPrefersDark(e.matches);
-      const current = (localStorage.getItem("theme") as ThemeMode) || "auto";
-      if (current === "auto") applyTheme("auto", e.matches);
-    };
-    mediaQuery.addEventListener("change", handleChange);
-    return () => mediaQuery.removeEventListener("change", handleChange);
   }, []);
+
+  // Apply theme on mount and when dependencies change
+  useEffect(() => {
+    applyTheme(theme, systemPrefersDark);
+    setMounted(true);
+  }, [theme, systemPrefersDark, applyTheme]);
 
   const cycleTheme = () => {
     const themes: ThemeMode[] = ["auto", "light", "dark"];
