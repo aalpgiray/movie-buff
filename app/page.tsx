@@ -49,7 +49,6 @@ export default function Home() {
 			// previous search so results are never "stuck" on screen at load.
 			rebuildDefaultList(storedSeen);
 		})();
-	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
 	// Rebuild default list whenever seen status changes (e.g. user toggles seen on home page).
@@ -57,7 +56,6 @@ export default function Home() {
 	useEffect(() => {
 		if (isFirstRender.current) { isFirstRender.current = false; return; }
 		rebuildDefaultList(seenMovies);
-	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [seenMovies]);
 
 	const toggleSeen = async (id: string) => {
