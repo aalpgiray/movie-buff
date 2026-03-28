@@ -29,7 +29,7 @@ export async function MovieDetail({ imdbID }: MovieDetailProps) {
 	return (
 		<>
 			<div className="grid md:grid-cols-[300px_1fr] gap-8 animate-in fade-in duration-500">
-				<div className="relative aspect-[2/3] w-full max-w-sm md:max-w-none rounded-xl overflow-hidden border border-border">
+				<div className="relative aspect-[2/3] w-48 md:w-full rounded-xl overflow-hidden border border-border mx-auto md:mx-0">
 					{posterSrc && (
 						<Image
 							src={posterSrc}
