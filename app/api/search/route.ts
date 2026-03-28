@@ -90,8 +90,9 @@ export async function POST(req: Request) {
 
 		const searchResults = await Promise.allSettled(moviePromises);
 		let allMovies: Array<Movie & { reason: string }> = searchResults
-			.filter((r): r is PromiseFulfilledResult<Movie & { reason: string }> => r.status === 'fulfilled')
-			.map(r => r.value);
+			.filter((r): r is PromiseFulfilledResult<Movie & { reason: string } | null> => r.status === 'fulfilled')
+			.map(r => r.value)
+			.filter((m): m is Movie & { reason: string } => m !== null);
 
 		// Filter out movies already seen
 		allMovies = allMovies.filter(

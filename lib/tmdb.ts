@@ -21,16 +21,39 @@ function bearerHeaders() {
 }
 
 export async function searchMovies(query: string) {
-  if (!TMDB_API_KEY) {
-    console.warn("TMDB_API_KEY is not set. Returning mock data.");
+  if (!TMDB_API_KEY && !TMDB_READ_ACCESS_TOKEN) {
+    console.warn("TMDB API keys not set. Returning empty results.");
     return { results: [] };
   }
-  const res = await fetch(
-    `${BASE_URL}/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}`,
-    CACHE_OPTS,
-  );
+  
+  const headers = TMDB_READ_ACCESS_TOKEN ? bearerHeaders() : {};
+  const url = TMDB_API_KEY 
+    ? `${BASE_URL}/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}`
+    : `${BASE_URL}/search/movie?query=${encodeURIComponent(query)}`;
+    
+  const res = await fetch(url, { headers, ...CACHE_OPTS });
   if (!res.ok) throw new Error("Failed to fetch from TMDB");
   return res.json();
+}
+
+// Convert TMDB result to OMDB-compatible format
+export interface TMDBMovie {
+  id: number;
+  title: string;
+  release_date?: string;
+  poster_path?: string;
+}
+
+export function tmdbToOmdbFormat(tmdbMovie: TMDBMovie): { imdbID: string; Title: string; Year: string; Poster: string; Type: string } {
+  return {
+    imdbID: `tmdb-${tmdbMovie.id}`, // We'll resolve actual IMDB ID later if needed
+    Title: tmdbMovie.title,
+    Year: tmdbMovie.release_date?.substring(0, 4) || "N/A",
+    Poster: tmdbMovie.poster_path 
+      ? `https://image.tmdb.org/t/p/w500${tmdbMovie.poster_path}` 
+      : "N/A",
+    Type: "movie",
+  };
 }
 
 export async function getMovieDetails(id: number) {
