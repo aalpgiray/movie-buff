@@ -9,133 +9,135 @@ import type { Movie, MovieDetails } from "@/lib/types";
 import { AvailabilityMatrix } from "./AvailabilityMatrix";
 
 interface MovieDetailModalProps {
-	isOpen: boolean;
-	onClose: () => void;
-	movie: Movie;
+        isOpen: boolean;
+        onClose: () => void;
+        movie: Movie;
 }
 
 export function MovieDetailModal({
-	isOpen,
-	onClose,
-	movie,
+        isOpen,
+        onClose,
+        movie,
 }: MovieDetailModalProps) {
-	const [details, setDetails] = useState<MovieDetails | null>(null);
-	const [streaming, setStreaming] = useState<StreamingAvailabilityResponse>({
-		streamingInfo: {},
-	});
-	const [loading, setLoading] = useState(false);
+        const [details, setDetails] = useState<MovieDetails | null>(null);
+        const [streaming, setStreaming] = useState<StreamingAvailabilityResponse>({
+                streamingInfo: {},
+        });
+        const [loading, setLoading] = useState(false);
 
-	useEffect(() => {
-		if (isOpen && movie) {
-			let isMounted = true;
+        useEffect(() => {
+                if (isOpen && movie) {
+                        let isMounted = true;
 
-			const fetchData = async () => {
-				if (isMounted) setLoading(true);
+                        const fetchData = async () => {
+                                if (isMounted) setLoading(true);
 
-				try {
-					const res = await fetch(`/api/movie/${movie.imdbID}`);
-					const data = (await res.json()) as {
-						details: MovieDetails | null;
-						streaming: StreamingAvailabilityResponse | null;
-					};
-					if (isMounted) {
-						setDetails(data.details ?? null);
-						setStreaming(
-							data.streaming ?? {
-								streamingInfo: {},
-							},
-						);
-					}
-				} catch (err) {
-					console.error(err);
-					if (isMounted) {
-						setStreaming({ streamingInfo: {} });
-					}
-				} finally {
-					if (isMounted) setLoading(false);
-				}
-			};
+                                try {
+                                        const res = await fetch(`/api/movie/${movie.imdbID}`);
+                                        const data = (await res.json()) as {
+                                                details: MovieDetails | null;
+                                                streaming: StreamingAvailabilityResponse | null;
+                                        };
+                                        if (isMounted) {
+                                                setDetails(data.details ?? null);
+                                                setStreaming(
+                                                        data.streaming ?? {
+                                                                streamingInfo: {},
+                                                        },
+                                                );
+                                        }
+                                } catch (err) {
+                                        console.error(err);
+                                        if (isMounted) {
+                                                setStreaming({ streamingInfo: {} });
+                                        }
+                                } finally {
+                                        if (isMounted) setLoading(false);
+                                }
+                        };
 
-			fetchData();
+                        fetchData();
 
-			return () => {
-				isMounted = false;
-			};
-		}
-	}, [isOpen, movie]);
+                        return () => {
+                                isMounted = false;
+                        };
+                }
+        }, [isOpen, movie]);
 
-	if (!movie) return null;
+        if (!movie) return null;
 
-	return (
-		<Dialog open={isOpen} onOpenChange={onClose}>
-			<DialogContent className="max-w-4xl bg-card/95 backdrop-blur-xl border-border/50 max-h-[90vh] overflow-hidden flex flex-col p-0">
-				<div className="p-6 shrink-0">
-					<div className="grid md:grid-cols-[300px_1fr] gap-6">
-						<div className="relative aspect-[2/3] w-full rounded-lg overflow-hidden">
-							{movie.Poster !== "N/A" && (
-								<Image
-									src={movie.Poster}
-									alt={movie.Title}
-									fill
-									className="object-cover"
-								/>
-							)}
-						</div>
+        return (
+                <Dialog open={isOpen} onOpenChange={onClose}>
+                        <DialogContent className="max-w-4xl bg-card/95 backdrop-blur-xl border-border/50 max-h-[90vh] overflow-hidden flex flex-col p-0">
+                                <div className="p-6 shrink-0">
+                                        <div className="grid md:grid-cols-[300px_1fr] gap-6">
+                                                <div className="flex justify-center md:block">
+                                                        <div className="relative aspect-[2/3] w-[120px] md:w-full rounded-lg overflow-hidden">
+                                                                {movie.Poster !== "N/A" && (
+                                                                        <Image
+                                                                                src={movie.Poster}
+                                                                                alt={movie.Title}
+                                                                                fill
+                                                                                className="object-cover"
+                                                                        />
+                                                                )}
+                                                        </div>
+                                                </div>
 
-						<div className="space-y-6">
-							<div>
-								<DialogTitle className="text-3xl font-bold mb-2">
-									{movie.Title}
-								</DialogTitle>
-								<div className="flex items-center gap-4 text-sm text-muted-foreground">
-									<span>{movie.Year}</span>
-									<span>{details?.Rated}</span>
-									<span>{details?.Runtime}</span>
-								</div>
-							</div>
+                                                <div className="space-y-6">
+                                                        <div>
+                                                                <DialogTitle className="text-3xl font-bold mb-2">
+                                                                        {movie.Title}
+                                                                </DialogTitle>
+                                                                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                                                        <span>{movie.Year}</span>
+                                                                        <span>{details?.Rated}</span>
+                                                                        <span>{details?.Runtime}</span>
+                                                                </div>
+                                                        </div>
 
-							<div className="flex items-center gap-2">
-								<Star className="h-5 w-5 text-yellow-500 fill-yellow-500" />
-								<span className="text-xl font-bold">
-									{details?.imdbRating || "N/A"}
-								</span>
-								<span className="text-muted-foreground">/ 10</span>
-							</div>
+                                                        <div className="flex items-center gap-2">
+                                                                <Star className="h-5 w-5 text-yellow-500 fill-yellow-500" />
+                                                                <span className="text-xl font-bold">
+                                                                        {details?.imdbRating || "N/A"}
+                                                                </span>
+                                                                <span className="text-muted-foreground">/ 10</span>
+                                                        </div>
 
-							<p className="text-lg leading-relaxed text-muted-foreground">
-								{details?.Plot || "Loading plot..."}
-							</p>
+                                                        <p className="text-lg leading-relaxed text-muted-foreground">
+                                                                {details?.Plot || "Loading plot..."}
+                                                        </p>
 
-							<div className="grid grid-cols-2 gap-4 text-sm">
-								<div>
-									<span className="text-muted-foreground block">Director</span>
-									<span className="font-medium">{details?.Director}</span>
-								</div>
-								<div>
-									<span className="text-muted-foreground block">Cast</span>
-									<span className="font-medium">{details?.Actors}</span>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
+                                                        <div className="grid grid-cols-2 gap-4 text-sm">
+                                                                <div>
+                                                                        <span className="text-muted-foreground block">Director</span>
+                                                                        <span className="font-medium">{details?.Director}</span>
+                                                                </div>
+                                                                <div>
+                                                                        <span className="text-muted-foreground block">Cast</span>
+                                                                        <span className="font-medium">{details?.Actors}</span>
+                                                                </div>
+                                                        </div>
+                                                </div>
+                                        </div>
+                                </div>
 
-				<div className="min-h-0 flex-1 overflow-y-auto border-t border-border">
-					<div className="p-6 pt-4">
-						<h3 className="font-semibold text-lg mb-4">
-							Streaming Availability
-						</h3>
-						{loading ? (
-							<div className="animate-pulse h-32 bg-muted/20 rounded-lg" />
-						) : (
-							<AvailabilityMatrix
-								availability={streaming.streamingInfo}
-								stickyTop="top-0"
-							/>
-						)}
-					</div>
-				</div>
-			</DialogContent>
-		</Dialog>
-	);
+                                <div className="min-h-0 flex-1 overflow-y-auto border-t border-border">
+                                        <div className="p-6 pt-4">
+                                                <h3 className="font-semibold text-lg mb-4">
+                                                        Streaming Availability
+                                                </h3>
+                                                {loading ? (
+                                                        <div className="animate-pulse h-32 bg-muted/20 rounded-lg" />
+                                                ) : (
+                                                        <AvailabilityMatrix
+                                                                availability={streaming.streamingInfo}
+                                                                stickyTop="top-0"
+                                                        />
+                                                )}
+                                        </div>
+                                </div>
+                        </DialogContent>
+                </Dialog>
+        );
 }
