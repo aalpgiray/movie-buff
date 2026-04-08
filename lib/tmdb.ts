@@ -4,7 +4,7 @@ const BASE_URL = "https://api.themoviedb.org/3";
 
 const CACHE_OPTS: RequestInit = { next: { revalidate: 3600 } };
 
-interface TMDbVideo {
+export interface TMDbVideo {
   id: string;
   key: string;
   name: string;

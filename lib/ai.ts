@@ -3,14 +3,112 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 const apiKey = process.env.GEMINI_API_KEY;
 const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
 
-// Reuse model instance for better performance
-const model = genAI?.getGenerativeModel({ 
-	model: "gemini-flash-latest",
+const model = genAI?.getGenerativeModel({
+	model: "gemini-2.5-flash",
 	generationConfig: {
-		maxOutputTokens: 2048,
+		maxOutputTokens: 8192,
 		temperature: 0.7,
+		// Disable thinking tokens so response.text() is pure content
+		// @ts-expect-error thinkingConfig is valid for gemini-2.5-flash
+		thinkingConfig: { thinkingBudget: 0 },
 	},
 });
+
+function extractJson(text: string): unknown | null {
+	// Strip markdown code fences
+	let clean = text
+		.replace(/```json\s*/gi, "")
+		.replace(/```\s*/g, "")
+		.trim();
+
+	// Try parsing as-is first
+	try {
+		return JSON.parse(clean);
+	} catch {
+		// ignore
+	}
+
+	// Find the outermost JSON object or array in the text
+	// (handles thinking tokens or other text prepended/appended)
+	const objStart = clean.indexOf("{");
+	const arrStart = clean.indexOf("[");
+
+	if (objStart === -1 && arrStart === -1) return null;
+
+	const useObj =
+		objStart !== -1 && (arrStart === -1 || objStart < arrStart);
+	const start = useObj ? objStart : arrStart;
+	const openChar = useObj ? "{" : "[";
+	const closeChar = useObj ? "}" : "]";
+
+	// Find balanced closing bracket from the start
+	let depth = 0;
+	let end = -1;
+	let inString = false;
+	let escaped = false;
+
+	for (let i = start; i < clean.length; i++) {
+		const ch = clean[i];
+		if (escaped) { escaped = false; continue; }
+		if (ch === "\\" && inString) { escaped = true; continue; }
+		if (ch === '"') { inString = !inString; continue; }
+		if (inString) continue;
+		if (ch === openChar) depth++;
+		else if (ch === closeChar) {
+			depth--;
+			if (depth === 0) { end = i; break; }
+		}
+	}
+
+	if (end === -1) return null;
+
+	try {
+		return JSON.parse(clean.slice(start, end + 1));
+	} catch {
+		return null;
+	}
+}
+
+function parseMoviesJson(text: string): { title: string; reason: string }[] | null {
+	const parsed = extractJson(text);
+	if (!parsed) return null;
+
+	const isValidMovie = (m: unknown): m is { title: string; reason: string } =>
+		!!m &&
+		typeof m === "object" &&
+		typeof (m as Record<string, unknown>).title === "string" &&
+		(m as Record<string, unknown>).title !== "";
+
+	if (typeof parsed === "object" && !Array.isArray(parsed)) {
+		const obj = parsed as Record<string, unknown>;
+		if (Array.isArray(obj.movies)) {
+			return obj.movies.filter(isValidMovie);
+		}
+	}
+
+	if (Array.isArray(parsed)) {
+		return (parsed as unknown[]).filter(isValidMovie) as { title: string; reason: string }[];
+	}
+
+	return null;
+}
+
+async function generateWithRetry(prompt: string, retries = 2): Promise<string> {
+	let lastError: unknown;
+	for (let i = 0; i <= retries; i++) {
+		try {
+			const result = await model!.generateContent(prompt);
+			const response = await result.response;
+			return response.text();
+		} catch (err) {
+			lastError = err;
+			if (i < retries) {
+				await new Promise((r) => setTimeout(r, 600 * (i + 1)));
+			}
+		}
+	}
+	throw lastError;
+}
 
 export async function getSearchQueriesFromMood(
 	mood: string,
@@ -23,82 +121,54 @@ export async function getSearchQueriesFromMood(
 
 	const seenContext =
 		seenMovies.length > 0
-			? `The user has already seen these movies: ${seenMovies.join(", ")}. Do NOT recommend these again. Use them as context for their taste.`
+			? `The user has already seen these movies: ${seenMovies.join(", ")}. Do NOT recommend these again.`
 			: "";
 
-	const prompt = `
-You are a movie expert. Recommend 20 specific movies based on the user's mood/emotion/request.
+	const prompt = `You are a movie expert. Recommend 20 specific, well-known movies based on the user's mood/emotion/request.
 ${seenContext}
 
-Output a JSON object with a single key "movies" containing an array of objects.
-Each object must have:
-- "title": The exact title of the movie.
-- "reason": A short, punchy sentence explaining WHY this movie fits the mood.
+Return ONLY a JSON object with this exact structure:
+{"movies": [{"title": "Exact Movie Title", "reason": "Short punchy reason under 15 words"}, ...]}
 
-Example: {
-  "movies": [
-    {"title": "The Shawshank Redemption", "reason": "It's the ultimate story of hope against all odds."},
-    {"title": "Inside Out", "reason": "A colorful, emotional journey that literally explores feelings."}
-  ]
-}
-
-User input: "${mood}"
-`;
+User input: "${mood}"`;
 
 	try {
-		const result = await model.generateContent(prompt);
-		const response = await result.response;
-		const text = response.text();
-		const cleanText = text.replace(/```json\n?|```/g, "").trim();
-		const parsed = JSON.parse(cleanText);
+		const text = await generateWithRetry(prompt);
+		const movies = parseMoviesJson(text);
 
-		if (parsed.movies && Array.isArray(parsed.movies)) {
-			return parsed.movies;
+		if (movies && movies.length > 0) {
+			return movies;
 		}
 
-		console.warn("Unexpected JSON structure from Gemini:", parsed);
+		console.warn("Could not parse Gemini response:", text.slice(0, 300));
 		return [{ title: mood, reason: "Best match for your search" }];
 	} catch (error) {
-		console.error("Error generating queries:", error);
+		console.error("Error generating queries from mood:", error);
 		return [{ title: mood, reason: "Fallback search" }];
 	}
 }
 
 export async function detectMovieName(input: string): Promise<string | null> {
-	if (!model) {
-		return null;
-	}
+	if (!model) return null;
 
-	const prompt = `
-You are a movie title detector. Determine if the user input is a movie title or movie-related search.
-  
-If it IS a movie title:
-- Return JSON: {"isMovie": true, "correctedTitle": "The Corrected Movie Title"}
-- Correct any typos (e.g., "interstelar" -> "Interstellar", "god father" -> "The Godfather")
+	const prompt = `You are a movie title detector. Return ONLY JSON, no other text.
+
+If the input IS a movie title (correct any typos):
+{"isMovie": true, "correctedTitle": "The Corrected Movie Title"}
 
 If it is NOT a movie title (it's a mood/feeling/description):
-- Return JSON: {"isMovie": false}
+{"isMovie": false}
 
-Examples:
-- "inception" -> {"isMovie": true, "correctedTitle": "Inception"}
-- "the dark knight" -> {"isMovie": true, "correctedTitle": "The Dark Knight"}
-- "feeling sad" -> {"isMovie": false}
-- "want something funny" -> {"isMovie": false}
-
-User input: "${input}"
-`;
+User input: "${input}"`;
 
 	try {
-		const result = await model.generateContent(prompt);
-		const response = await result.response;
-		const text = response.text();
-		const cleanText = text.replace(/```json\n?|```/g, "").trim();
-		const parsed = JSON.parse(cleanText);
-		
-		if (parsed.isMovie && parsed.correctedTitle) {
+		const text = await generateWithRetry(prompt);
+		const parsed = extractJson(text) as Record<string, unknown> | null;
+
+		if (parsed?.isMovie && typeof parsed.correctedTitle === "string") {
 			return parsed.correctedTitle;
 		}
-		
+
 		return null;
 	} catch (error) {
 		console.error("Error detecting movie name:", error);
@@ -113,52 +183,34 @@ export async function getSimilarMovies(
 	plot: string,
 ): Promise<{ title: string; reason: string }[]> {
 	if (!model) {
-		console.warn("GEMINI_API_KEY is not set. Using fallback similar movies by genre.");
+		console.warn("GEMINI_API_KEY is not set.");
 		const primaryGenre = genre.split(",")[0].trim();
 		return [
 			{ title: `${primaryGenre} movies`, reason: "Same genre" },
 			{ title: `Best ${primaryGenre}`, reason: "Highly rated in genre" },
-			{ title: `${primaryGenre} films 2020s`, reason: "Modern similar films" },
 			{ title: `${primaryGenre} classics`, reason: "Classic films in genre" },
-			{ title: `${primaryGenre} masterpieces`, reason: "Acclaimed similar movies" },
-			{ title: `Top ${primaryGenre}`, reason: "Popular in this genre" },
 		];
 	}
 
-	const prompt = `
-You are a movie expert. Recommend 6 specific movies similar to the given movie.
-Consider: genre, tone, rating level, and overall vibe.
+	const prompt = `You are a movie expert. Recommend 6 specific, well-known movies similar to the given movie.
 
-Output a JSON object with a single key "movies" containing an array of objects.
-Each object must have:
-- "title": The exact title of the movie (must be a real, well-known movie).
-- "reason": A short sentence explaining why it's similar (max 10 words).
+Return ONLY a JSON object with this exact structure:
+{"movies": [{"title": "Exact Movie Title", "reason": "Why it's similar in under 10 words"}, ...]}
 
-Example: {
-  "movies": [
-    {"title": "The Dark Knight", "reason": "Same gritty superhero tone."},
-    {"title": "Inception", "reason": "Mind-bending sci-fi like The Matrix."}
-  ]
-}
-
-Movie to find similar to: "${movieTitle}"
+Movie: "${movieTitle}"
 Genre: ${genre}
 Rating: ${rating}/10
-Plot: ${plot}
-`;
+Plot: ${plot}`;
 
 	try {
-		const result = await model.generateContent(prompt);
-		const response = await result.response;
-		const text = response.text();
-		const cleanText = text.replace(/```json\n?|```/g, "").trim();
-		const parsed = JSON.parse(cleanText);
+		const text = await generateWithRetry(prompt);
+		const movies = parseMoviesJson(text);
 
-		if (parsed.movies && Array.isArray(parsed.movies)) {
-			return parsed.movies;
+		if (movies && movies.length > 0) {
+			return movies;
 		}
 
-		console.warn("Unexpected JSON structure from Gemini:", parsed);
+		console.warn("Could not parse Gemini similar movies response:", text.slice(0, 300));
 		return [];
 	} catch (error) {
 		console.error("Error generating similar movies:", error);

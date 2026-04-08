@@ -39,6 +39,9 @@ yarn-error.log*
 # vercel (project.json committed so worktrees don't need to re-link)
 # .vercel
 
+# design sandbox (canvas prototyping tool, not part of the app)
+/artifacts/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

@@ -1,15 +1,12 @@
 import { getMovieTrailers } from "@/lib/tmdb";
-import { TrailerPlayer } from "./TrailerPlayer";
+import { TrailerGallery } from "./TrailerGallery";
 
 export async function TrailerSection({ imdbID }: { imdbID: string }) {
     const trailers = await getMovieTrailers(imdbID);
 
-    // Get the first official trailer or any trailer
-    const mainTrailer = trailers.find(t => t.official && t.type === "Trailer") || trailers[0];
-
-    if (!mainTrailer) {
+    if (trailers.length === 0) {
         return null;
     }
 
-    return <TrailerPlayer videoKey={mainTrailer.key} />;
+    return <TrailerGallery trailers={trailers} />;
 }
