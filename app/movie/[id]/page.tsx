@@ -8,7 +8,7 @@ export default function MoviePage(props: { params: Promise<{ id: string }> }) {
         return (
                 <>
                         <HeaderWrapper />
-                        <main className="min-h-screen overflow-x-hidden bg-background text-foreground p-4 md:p-24 pt-24">
+                        <main className="min-h-screen overflow-x-clip bg-background text-foreground p-4 md:p-24 pt-24">
                                 <div className="max-w-5xl mx-auto">
                                         <BackLink />
 
