@@ -16,6 +16,7 @@ import {
 import type { WatchlistCategory } from "@/lib/types";
 import CategoryAssignControl from "@/components/CategoryAssignControl";
 import { MovieRatingForm } from "@/components/MovieRatingForm";
+import { emitWatchlistChange } from "@/lib/events";
 import Link from "next/link";
 
 interface MovieDetailActionsProps {
@@ -73,6 +74,7 @@ export function MovieDetailActions({ imdbID, title, year, poster, type }: MovieD
     if (result.success) {
       setIsSeen(newSeen);
       flash(setSeenFeedback);
+      emitWatchlistChange();
       router.refresh();
     }
   };
@@ -84,6 +86,7 @@ export function MovieDetailActions({ imdbID, title, year, poster, type }: MovieD
         setIsInWatchlist(false);
         setCategories([]);
         flash(setWatchlistFeedback);
+        emitWatchlistChange();
         router.refresh();
       }
     } else {
@@ -99,6 +102,7 @@ export function MovieDetailActions({ imdbID, title, year, poster, type }: MovieD
         const cats = await getCategoriesAction();
         setCategories(cats);
         flash(setWatchlistFeedback);
+        emitWatchlistChange();
         router.refresh();
       }
     }

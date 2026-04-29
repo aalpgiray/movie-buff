@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import type { Movie } from "@/lib/types";
 import { createClient } from "@/lib/supabase/client";
+import { emitWatchlistChange } from "@/lib/events";
 import {
   addToWatchlistAction,
   removeFromWatchlistAction,
@@ -103,6 +104,7 @@ export default function Home() {
         }
 
         setSeenMovieIds(newSet);
+        emitWatchlistChange();
       } catch (error) {
         console.error("Error in toggleSeen:", error);
       }
@@ -138,6 +140,7 @@ export default function Home() {
           newSet.add(id);
         }
         setWatchlistIds(newSet);
+        emitWatchlistChange();
       } catch (error) {
         console.error("Error in toggleWatchlist:", error);
       }

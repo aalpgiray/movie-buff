@@ -3,8 +3,8 @@
 import { useEffect, useState, useCallback } from "react";
 import { Header } from "@/components/Header";
 import { createClient } from "@/lib/supabase/client";
+import { onWatchlistChange } from "@/lib/events";
 import type { User } from "@supabase/supabase-js";
-import type { RealtimeChannel } from "@supabase/supabase-js";
 
 export function HeaderWrapper() {
   const [watchlistCount, setWatchlistCount] = useState(0);
@@ -41,7 +41,6 @@ export function HeaderWrapper() {
 
   useEffect(() => {
     const supabase = createClient();
-    let realtimeChannel: RealtimeChannel | null = null;
 
     // Get initial auth state
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -49,24 +48,6 @@ export function HeaderWrapper() {
       setLoading(false);
       if (user) {
         fetchCounts();
-        
-        // Subscribe to realtime changes on user_movies table
-        realtimeChannel = supabase
-          .channel("user_movies_changes")
-          .on(
-            "postgres_changes",
-            {
-              event: "*",
-              schema: "public",
-              table: "user_movies",
-              filter: `user_id=eq.${user.id}`,
-            },
-            () => {
-              // Refetch counts whenever data changes
-              fetchCounts();
-            }
-          )
-          .subscribe();
       }
     });
 
@@ -83,11 +64,14 @@ export function HeaderWrapper() {
       }
     });
 
+    // Listen for watchlist changes from other components
+    const unsubscribe = onWatchlistChange(() => {
+      fetchCounts();
+    });
+
     return () => {
       subscription.unsubscribe();
-      if (realtimeChannel) {
-        supabase.removeChannel(realtimeChannel);
-      }
+      unsubscribe();
     };
   }, [fetchCounts]);
 
