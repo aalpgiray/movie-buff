@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { upsertMovie, getAllMovies } from "@/lib/movie-db";
-import { Textarea } from "@/components/ui/textarea";
+
 
 interface MovieRatingFormProps {
   imdbID: string;
@@ -131,13 +131,19 @@ export function MovieRatingForm({ imdbID }: MovieRatingFormProps) {
           Your Thoughts{" "}
           <span className="text-muted-foreground font-normal">(optional)</span>
         </label>
-        <Textarea
+        <textarea
           id={`comment-${imdbID}`}
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           placeholder="What did you think about this movie?"
           maxLength={500}
-          className="min-h-[80px] resize-none"
+          className={cn(
+            "w-full min-h-[80px] resize-none rounded-md px-3 py-2",
+            "bg-secondary text-foreground placeholder:text-muted-foreground",
+            "border border-border focus:border-accent",
+            "focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1",
+            "text-sm"
+          )}
         />
         <p className="text-xs text-muted-foreground mt-1 text-right">
           {comment.length}/500
