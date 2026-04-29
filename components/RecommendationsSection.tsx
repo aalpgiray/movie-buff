@@ -32,11 +32,9 @@ export function RecommendationsSection({
 
     try {
       const ratedMovies: RatedMovie[] = await getRatedMovies();
-      console.log("[v0] Rated movies count:", ratedMovies.length, "Movies:", ratedMovies);
       setRatedCount(ratedMovies.length);
 
       if (ratedMovies.length < 3) {
-        console.log("[v0] Not enough ratings, need 3, have:", ratedMovies.length);
         setHasEnoughRatings(false);
         setLoading(false);
         return;
@@ -146,7 +144,7 @@ export function RecommendationsSection({
       </p>
 
       {/* Horizontal scroll container */}
-      <div className="overflow-x-auto-only pb-2 -mx-6 px-6">
+      <div className="overflow-x-auto pb-2 -mx-6 px-6">
         <div className="flex gap-4" style={{ width: "max-content" }}>
           {loading &&
             Array.from({ length: 6 }).map((_, i) => (

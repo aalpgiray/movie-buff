@@ -10,7 +10,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import type { Movie } from "@/lib/types";
 import { upsertMovies, upsertMovie, getAllMovies, buildDefaultList, getList, setList } from "@/lib/movie-db";
-import { RecommendationsSection } from "@/components/RecommendationsSection";
 
 export default function Home() {
 	const [movies, setMovies] = useState<Movie[]>([]);
@@ -214,14 +213,6 @@ export default function Home() {
 						</div>
 					)}
 				</div>
-
-				{/* Personalized Recommendations - only on default view */}
-				{!hasSearched && (
-					<RecommendationsSection
-						watchlistMovies={watchlistMovies}
-						onWatchlistChange={setWatchlistMovies}
-					/>
-				)}
 
 				{/* Movie grid */}
 				{(hasResults || activeLoading) && (

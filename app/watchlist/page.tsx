@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { Movie, WatchlistCategory } from "@/lib/types";
 import { getList, setList, getAllMovies, getCategories, setCategories, removeMovieFromAllCategories } from "@/lib/movie-db";
 import CategoryFilter from "@/components/CategoryFilter";
+import { RecommendationsSection } from "@/components/RecommendationsSection";
 
 /** Silently call the AI to categorize uncategorized movies and merge results into IDB. */
 async function autoCategorizeSilently(
@@ -138,6 +139,22 @@ export default function WatchlistPage() {
                         } to watch
                     </p>
                 </div>
+
+                <RecommendationsSection
+                    watchlistMovies={watchlistMovies.map((m) => m.imdbID)}
+                    onWatchlistChange={(newIds) => {
+                        // Optimistically reflect newly added watchlist items
+                        setWatchlistMovies((prev) => {
+                            const existingIds = new Set(prev.map((m) => m.imdbID));
+                            const added = newIds.filter((id) => !existingIds.has(id));
+                            if (!added.length) return prev;
+                            const placeholders = added.map((id) => ({
+                                imdbID: id, Title: "", Year: "", Type: "movie", Poster: "N/A",
+                            }));
+                            return [...prev, ...placeholders];
+                        });
+                    }}
+                />
 
                 {loading ? (
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
