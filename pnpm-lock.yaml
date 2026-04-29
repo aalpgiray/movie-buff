@@ -20,6 +20,9 @@ importers:
       '@supabase/ssr':
         specifier: ^0.10.2
         version: 0.10.2(@supabase/supabase-js@2.105.1)
+      '@supabase/supabase-js':
+        specifier: ^2.105.1
+        version: 2.105.1
       ai:
         specifier: ^6.0.170
         version: 6.0.170(zod@4.3.6)

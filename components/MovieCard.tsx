@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 
 interface MovieCardProps {
 	movie: Movie;
-	onToggleSeen: (id: string) => void;
+	onToggleSeen?: (id: string) => void;
 	isSeen: boolean;
 	onToggleWatchlist?: (id: string) => void;
 	isInWatchlist?: boolean;
@@ -91,28 +91,30 @@ export function MovieCard({
 						)}
 					</Button>
 				)}
-				<Button
-					variant={isSeen ? "default" : "secondary"}
-					size="icon"
-					className={cn(
-						"h-7 w-7 backdrop-blur-md",
-						isSeen
-							? "bg-primary text-primary-foreground hover:bg-primary/90"
-							: "bg-background/80 text-foreground hover:bg-background",
-					)}
-					onClick={(e) => {
-						e.preventDefault();
-						e.stopPropagation();
-						onToggleSeen(movie.imdbID);
-					}}
-					title={isSeen ? "Mark as unwatched" : "Mark as watched"}
-				>
-					{isSeen ? (
-						<EyeOff className="h-3.5 w-3.5" />
-					) : (
-						<Eye className="h-3.5 w-3.5" />
-					)}
-				</Button>
+				{onToggleSeen && (
+					<Button
+						variant={isSeen ? "default" : "secondary"}
+						size="icon"
+						className={cn(
+							"h-7 w-7 backdrop-blur-md",
+							isSeen
+								? "bg-primary text-primary-foreground hover:bg-primary/90"
+								: "bg-background/80 text-foreground hover:bg-background",
+						)}
+						onClick={(e) => {
+							e.preventDefault();
+							e.stopPropagation();
+							onToggleSeen(movie.imdbID);
+						}}
+						title={isSeen ? "Mark as unwatched" : "Mark as watched"}
+					>
+						{isSeen ? (
+							<EyeOff className="h-3.5 w-3.5" />
+						) : (
+							<Eye className="h-3.5 w-3.5" />
+						)}
+					</Button>
+				)}
 			</div>
 
 			{/* Status indicators */}
