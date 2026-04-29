@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Header } from "@/components/Header";
 import { createClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 
 export function HeaderWrapper() {
   const [watchlistCount, setWatchlistCount] = useState(0);
@@ -11,35 +12,7 @@ export function HeaderWrapper() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const supabase = createClient();
-
-    // Get initial auth state
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setUser(user);
-      setLoading(false);
-      if (user) {
-        fetchCounts();
-      }
-    });
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchCounts();
-      } else {
-        setWatchlistCount(0);
-        setWatchedCount(0);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const fetchCounts = async () => {
+  const fetchCounts = useCallback(async () => {
     try {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
@@ -64,7 +37,59 @@ export function HeaderWrapper() {
     } catch (error) {
       console.error("Error fetching counts:", error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const supabase = createClient();
+    let realtimeChannel: RealtimeChannel | null = null;
+
+    // Get initial auth state
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user);
+      setLoading(false);
+      if (user) {
+        fetchCounts();
+        
+        // Subscribe to realtime changes on user_movies table
+        realtimeChannel = supabase
+          .channel("user_movies_changes")
+          .on(
+            "postgres_changes",
+            {
+              event: "*",
+              schema: "public",
+              table: "user_movies",
+              filter: `user_id=eq.${user.id}`,
+            },
+            () => {
+              // Refetch counts whenever data changes
+              fetchCounts();
+            }
+          )
+          .subscribe();
+      }
+    });
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        fetchCounts();
+      } else {
+        setWatchlistCount(0);
+        setWatchedCount(0);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+      if (realtimeChannel) {
+        supabase.removeChannel(realtimeChannel);
+      }
+    };
+  }, [fetchCounts]);
 
   return (
     <Header
