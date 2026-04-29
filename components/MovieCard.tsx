@@ -1,6 +1,6 @@
 "use client";
 
-import { Bookmark, BookmarkCheck, Eye, EyeOff, Film } from "lucide-react";
+import { Bookmark, BookmarkCheck, Eye, EyeOff, Film, Sparkles } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +15,7 @@ interface MovieCardProps {
 	isSeen: boolean;
 	onToggleWatchlist?: (id: string) => void;
 	isInWatchlist?: boolean;
+	isRecommendation?: boolean;
 	priority?: boolean;
 }
 
@@ -24,6 +25,7 @@ export function MovieCard({
 	isSeen,
 	onToggleWatchlist,
 	isInWatchlist,
+	isRecommendation = false,
 	priority = false,
 }: MovieCardProps) {
 	return (
@@ -31,6 +33,7 @@ export function MovieCard({
 			className={cn(
 				"group relative overflow-hidden transition-all hover:border-foreground/20",
 				isSeen && "opacity-60",
+				isRecommendation && "border-accent/50 ring-1 ring-accent/20",
 			)}
 		>
 			<Link href={`/movie/${movie.imdbID}`} prefetch className="block">
@@ -112,12 +115,18 @@ export function MovieCard({
 				</Button>
 			</div>
 
-			{/* Seen indicator */}
-			{isSeen && (
-				<div className="absolute top-2 left-2 z-10">
+			{/* Status indicators */}
+			<div className="absolute top-2 left-2 z-10 flex flex-col gap-1">
+				{isRecommendation && (
+					<Badge variant="outline" className="bg-accent/90 text-accent-foreground border-accent flex items-center gap-1">
+						<Sparkles className="h-3 w-3" />
+						AI Pick
+					</Badge>
+				)}
+				{isSeen && (
 					<Badge variant="default">Seen</Badge>
-				</div>
-			)}
+				)}
+			</div>
 		</Card>
 	);
 }

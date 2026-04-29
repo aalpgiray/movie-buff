@@ -8,6 +8,7 @@ export interface Movie {
   rating?: number;
   comment?: string;
   isSeen?: boolean;
+  isRecommendation?: boolean;
 }
 
 export interface RatedMovie {

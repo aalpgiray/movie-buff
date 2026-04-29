@@ -106,6 +106,7 @@ export async function upsertMovies(movies: Movie[]): Promise<void> {
         isSeen: existing?.isSeen ?? movie.isSeen,
         rating: existing?.rating ?? movie.rating,
         comment: existing?.comment ?? movie.comment,
+        isRecommendation: existing?.isRecommendation ?? movie.isRecommendation,
       };
       store.put(merged);
     });
@@ -388,4 +389,30 @@ export async function removeMovieFromAllCategories(imdbID: string): Promise<void
     movieIds: c.movieIds.filter((id) => id !== imdbID),
   }));
   await setCategories(updated);
+}
+
+// ---------------------------------------------------------------------------
+// Dismissed Recommendations helpers
+// ---------------------------------------------------------------------------
+
+const DISMISSED_RECS_KEY = "dismissedRecommendations";
+
+/** Get list of imdbIDs for recommendations the user has dismissed. */
+export async function getDismissedRecommendations(): Promise<string[]> {
+  return getList(DISMISSED_RECS_KEY);
+}
+
+/** Add a movie ID to the dismissed recommendations list. */
+export async function addDismissedRecommendation(imdbID: string): Promise<void> {
+  const current = await getDismissedRecommendations();
+  if (!current.includes(imdbID)) {
+    await setList(DISMISSED_RECS_KEY, [...current, imdbID]);
+  }
+}
+
+/** Get recommendations count from the watchlist. */
+export async function getRecommendationsInWatchlist(watchlistIds: string[]): Promise<number> {
+  const allMovies = await getAllMovies();
+  const watchlistSet = new Set(watchlistIds);
+  return allMovies.filter((m) => watchlistSet.has(m.imdbID) && m.isRecommendation).length;
 }

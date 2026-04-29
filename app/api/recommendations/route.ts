@@ -7,6 +7,8 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const ratedMovies: RatedMovie[] = body.ratedMovies || [];
+    const dismissedIds: string[] = body.dismissedIds || [];
+    const watchlistIds: string[] = body.watchlistIds || [];
 
     if (ratedMovies.length < 3) {
       return NextResponse.json(
@@ -22,6 +24,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ movies: [] });
     }
 
+    // Build exclusion set: rated + dismissed + already in watchlist (non-recommendations)
+    const excludeIds = new Set([
+      ...ratedMovies.map((m) => m.imdbID),
+      ...dismissedIds,
+      ...watchlistIds,
+    ]);
+
     // Search OMDB for each recommended movie
     const moviePromises = aiRecommendations.map(async (rec) => {
       const searchResult = await searchMovies(rec.title);
@@ -34,6 +43,7 @@ export async function POST(request: Request) {
         return {
           ...movie,
           reason: rec.reason,
+          isRecommendation: true,
         } as Movie;
       }
       return null;
@@ -42,9 +52,8 @@ export async function POST(request: Request) {
     const results = await Promise.all(moviePromises);
     const movies = results.filter((m): m is Movie => m !== null);
 
-    // Filter out movies the user has already seen
-    const seenIds = new Set(ratedMovies.map((m) => m.imdbID));
-    const filteredMovies = movies.filter((m) => !seenIds.has(m.imdbID));
+    // Filter out excluded movies
+    const filteredMovies = movies.filter((m) => !excludeIds.has(m.imdbID));
 
     // Remove duplicates by imdbID
     const uniqueMovies = filteredMovies.filter(
