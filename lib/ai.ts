@@ -1,19 +1,8 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { generateText } from "ai";
 import type { RatedMovie } from "@/lib/types";
 
-const apiKey = process.env.GEMINI_API_KEY;
-const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
-
-const model = genAI?.getGenerativeModel({
-	model: "gemini-2.5-flash",
-	generationConfig: {
-		maxOutputTokens: 8192,
-		temperature: 0.7,
-		// Disable thinking tokens so response.text() is pure content
-		// @ts-expect-error thinkingConfig is valid for gemini-2.5-flash
-		thinkingConfig: { thinkingBudget: 0 },
-	},
-});
+// Use Vercel AI Gateway - no API key needed for supported providers in v0
+const MODEL = "google/gemini-2.5-flash";
 
 function extractJson(text: string): unknown | null {
 	// Strip markdown code fences
@@ -30,7 +19,6 @@ function extractJson(text: string): unknown | null {
 	}
 
 	// Find the outermost JSON object or array in the text
-	// (handles thinking tokens or other text prepended/appended)
 	const objStart = clean.indexOf("{");
 	const arrStart = clean.indexOf("[");
 
@@ -98,9 +86,13 @@ async function generateWithRetry(prompt: string, retries = 2): Promise<string> {
 	let lastError: unknown;
 	for (let i = 0; i <= retries; i++) {
 		try {
-			const result = await model!.generateContent(prompt);
-			const response = await result.response;
-			return response.text();
+			const result = await generateText({
+				model: MODEL,
+				prompt,
+				maxOutputTokens: 8192,
+				temperature: 0.7,
+			});
+			return result.text;
 		} catch (err) {
 			lastError = err;
 			if (i < retries) {
@@ -115,11 +107,6 @@ export async function getSearchQueriesFromMood(
 	mood: string,
 	seenMovies: string[] = [],
 ): Promise<{ title: string; reason: string }[]> {
-	if (!model) {
-		console.warn("GEMINI_API_KEY is not set.");
-		return [{ title: mood, reason: "Fallback search" }];
-	}
-
 	const seenContext =
 		seenMovies.length > 0
 			? `The user has already seen these movies: ${seenMovies.join(", ")}. Do NOT recommend these again.`
@@ -141,7 +128,7 @@ User input: "${mood}"`;
 			return movies;
 		}
 
-		console.warn("Could not parse Gemini response:", text.slice(0, 300));
+		console.warn("Could not parse AI response:", text.slice(0, 300));
 		return [{ title: mood, reason: "Best match for your search" }];
 	} catch (error) {
 		console.error("Error generating queries from mood:", error);
@@ -150,8 +137,6 @@ User input: "${mood}"`;
 }
 
 export async function detectMovieName(input: string): Promise<string | null> {
-	if (!model) return null;
-
 	const prompt = `You are a movie title detector. Return ONLY JSON, no other text.
 
 If the input IS a movie title (correct any typos):
@@ -183,16 +168,6 @@ export async function getSimilarMovies(
 	rating: string,
 	plot: string,
 ): Promise<{ title: string; reason: string }[]> {
-	if (!model) {
-		console.warn("GEMINI_API_KEY is not set.");
-		const primaryGenre = genre.split(",")[0].trim();
-		return [
-			{ title: `${primaryGenre} movies`, reason: "Same genre" },
-			{ title: `Best ${primaryGenre}`, reason: "Highly rated in genre" },
-			{ title: `${primaryGenre} classics`, reason: "Classic films in genre" },
-		];
-	}
-
 	const prompt = `You are a movie expert. Recommend 6 specific, well-known movies similar to the given movie.
 
 Return ONLY a JSON object with this exact structure:
@@ -211,11 +186,17 @@ Plot: ${plot}`;
 			return movies;
 		}
 
-		console.warn("Could not parse Gemini similar movies response:", text.slice(0, 300));
+		console.warn("Could not parse AI similar movies response:", text.slice(0, 300));
 		return [];
 	} catch (error) {
 		console.error("Error generating similar movies:", error);
-		return [];
+		// Fallback to genre-based suggestions
+		const primaryGenre = genre.split(",")[0].trim();
+		return [
+			{ title: `${primaryGenre} movies`, reason: "Same genre" },
+			{ title: `Best ${primaryGenre}`, reason: "Highly rated in genre" },
+			{ title: `${primaryGenre} classics`, reason: "Classic films in genre" },
+		];
 	}
 }
 
@@ -226,11 +207,6 @@ Plot: ${plot}`;
 export async function getPersonalizedRecommendations(
 	ratedMovies: RatedMovie[],
 ): Promise<{ title: string; reason: string }[]> {
-	if (!model) {
-		console.warn("GEMINI_API_KEY is not set.");
-		return [];
-	}
-
 	if (ratedMovies.length === 0) {
 		return [];
 	}
@@ -272,7 +248,7 @@ Return ONLY a JSON object with this exact structure:
 			return movies;
 		}
 
-		console.warn("Could not parse Gemini personalized recommendations:", text.slice(0, 300));
+		console.warn("Could not parse AI personalized recommendations:", text.slice(0, 300));
 		return [];
 	} catch (error) {
 		console.error("Error generating personalized recommendations:", error);
