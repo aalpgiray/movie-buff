@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback, useRef, useTransition } from "react";
+import { useState, useMemo, useCallback, useRef, useTransition, useEffect } from "react";
 import { MovieCard } from "@/components/MovieCard";
 import { HeaderWrapper } from "@/components/HeaderWrapper";
 import { ArrowLeft, Bookmark } from "lucide-react";
@@ -153,12 +153,13 @@ export function WatchlistClient({ initialMovies, initialCategories }: WatchlistC
   }, []);
 
   // Check if we need recommendations on mount
-  useState(() => {
+  useEffect(() => {
     fetchRecommendationsIfNeeded(watchlistMovies);
-  });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Auto-categorize on mount
-  useState(() => {
+  useEffect(() => {
     const categorizedIds = new Set(categories.flatMap((c) => c.movieIds));
     const uncategorized = watchlistMovies.filter(
       (m) => !m.isRecommendation && !categorizedIds.has(m.imdbID)
@@ -166,7 +167,8 @@ export function WatchlistClient({ initialMovies, initialCategories }: WatchlistC
     if (uncategorized.length > 0) {
       autoCategorizeSilently(uncategorized, categories, setCategoriesState);
     }
-  });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const filteredMovies = useMemo(() => {
     if (selectedFilter === null) return watchlistMovies;

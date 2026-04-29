@@ -104,10 +104,11 @@ export async function getMovieByImdbId(imdbId: string): Promise<Movie | null> {
     .select("*")
     .eq("user_id", user.id)
     .eq("imdb_id", imdbId)
-    .single();
+    .maybeSingle();
 
-  if (error && error.code !== "PGRST116") {
+  if (error) {
     console.error("Error fetching movie:", error);
+    return null;
   }
 
   return data ? rowToMovie(data) : null;

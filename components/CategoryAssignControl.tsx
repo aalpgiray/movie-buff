@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Tag, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { assignMovieToCategory, unassignMovieFromCategory } from "@/lib/movie-db";
+import { assignMovieToCategoryAction, unassignMovieFromCategoryAction } from "@/app/actions";
 import type { WatchlistCategory } from "@/lib/types";
 
 interface CategoryAssignControlProps {
@@ -34,9 +34,9 @@ export default function CategoryAssignControl({
 
   async function handleToggle(categoryId: string, isChecked: boolean) {
     if (isChecked) {
-      await unassignMovieFromCategory(imdbID, categoryId);
+      await unassignMovieFromCategoryAction(imdbID, categoryId);
     } else {
-      await assignMovieToCategory(imdbID, categoryId);
+      await assignMovieToCategoryAction(imdbID, categoryId);
     }
     onAssignmentChange();
   }

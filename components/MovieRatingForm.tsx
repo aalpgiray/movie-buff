@@ -3,8 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { upsertMovie, getAllMovies } from "@/lib/movie-db";
-
+import { getMovieStateAction, updateRatingAction } from "@/app/actions";
 
 interface MovieRatingFormProps {
   imdbID: string;
@@ -16,28 +15,24 @@ export function MovieRatingForm({ imdbID }: MovieRatingFormProps) {
   const [saved, setSaved] = useState(false);
   const [hoveredRating, setHoveredRating] = useState<number | null>(null);
 
-  // Load existing rating and comment from IndexedDB
+  // Load existing rating and comment from Supabase
   useEffect(() => {
-    getAllMovies().then((movies) => {
-      const movie = movies.find((m) => m.imdbID === imdbID);
-      if (movie) {
-        if (movie.rating !== undefined) setRating(movie.rating);
-        if (movie.comment) setComment(movie.comment);
+    getMovieStateAction(imdbID).then((state) => {
+      if (state) {
+        if (state.rating !== null) setRating(state.rating);
+        if (state.comment) setComment(state.comment);
       }
     });
   }, [imdbID]);
 
-  // Debounced save function
+  // Save function
   const saveData = useCallback(
     async (newRating: number | null, newComment: string) => {
-      await upsertMovie({
-        imdbID,
-        ...(newRating !== null ? { rating: newRating } : {}),
-        comment: newComment || undefined,
-      });
-      setSaved(true);
-      setTimeout(() => setSaved(false), 1500);
-      window.dispatchEvent(new Event("listsUpdated"));
+      const result = await updateRatingAction(imdbID, newRating, newComment || null);
+      if (result.success) {
+        setSaved(true);
+        setTimeout(() => setSaved(false), 1500);
+      }
     },
     [imdbID]
   );

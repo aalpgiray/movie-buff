@@ -5,15 +5,12 @@ import { Plus, Pencil, Trash2, Check, X, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  createCategory,
-  renameCategory,
-  deleteCategory,
-  getList,
-  getAllMovies,
-  setCategories,
-  getCategories,
-} from "@/lib/movie-db";
-import type { WatchlistCategory } from "@/lib/types";
+  createCategoryAction,
+  renameCategoryAction,
+  deleteCategoryAction,
+  getWatchlistAction,
+} from "@/app/actions";
+import type { WatchlistCategory, Movie } from "@/lib/types";
 
 interface CategoryManagerProps {
   categories: WatchlistCategory[];
@@ -35,7 +32,9 @@ export default function CategoryManager({
   const editInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    getList("watchlistMovies").then(setWatchlistMovies);
+    getWatchlistAction().then((movies: Movie[]) => {
+      setWatchlistMovies(movies.map((m) => m.imdbID));
+    });
   }, []);
 
   // Focus the rename input when editing starts
@@ -52,12 +51,12 @@ export default function CategoryManager({
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     setCreateError(null);
-    try {
-      await createCategory(newName.trim());
+    const result = await createCategoryAction(newName.trim());
+    if (result.success) {
       setNewName("");
       onCategoriesChange();
-    } catch (err) {
-      setCreateError(err instanceof Error ? err.message : "Failed to create category.");
+    } else {
+      setCreateError(result.error || "Failed to create category.");
     }
   }
 
@@ -75,18 +74,18 @@ export default function CategoryManager({
 
   async function handleRename(id: string) {
     setEditError(null);
-    try {
-      await renameCategory(id, editName.trim());
+    const result = await renameCategoryAction(id, editName.trim());
+    if (result.success) {
       setEditingId(null);
       setEditName("");
       onCategoriesChange();
-    } catch (err) {
-      setEditError(err instanceof Error ? err.message : "Failed to rename category.");
+    } else {
+      setEditError(result.error || "Failed to rename category.");
     }
   }
 
   async function handleDelete(id: string) {
-    await deleteCategory(id);
+    await deleteCategoryAction(id);
     onCategoriesChange();
   }
 
@@ -94,17 +93,17 @@ export default function CategoryManager({
     setAutoLoading(true);
     setAutoError(null);
     try {
-      const [watchlistIds, allMovies] = await Promise.all([
-        getList("watchlistMovies"),
-        getAllMovies(),
-      ]);
-      const byId = Object.fromEntries(allMovies.map((m) => [m.imdbID, m]));
-      const movies = watchlistIds
-        .map((id) => byId[id])
-        .filter(Boolean)
-        .map((m) => ({ imdbID: m.imdbID, title: m.Title, year: m.Year }));
+      const watchlist = await getWatchlistAction();
+      const movies = watchlist.map((m) => ({
+        imdbID: m.imdbID,
+        title: m.Title,
+        year: m.Year,
+      }));
 
-      if (!movies.length) return;
+      if (!movies.length) {
+        setAutoError("Add some movies to your watchlist first.");
+        return;
+      }
 
       const res = await fetch("/api/categorize", {
         method: "POST",
@@ -118,18 +117,11 @@ export default function CategoryManager({
         return;
       }
 
-      // Merge with existing categories — skip names that already exist
-      const existing = await getCategories();
-      const existingNames = new Set(existing.map((c) => c.name.toLowerCase()));
-      const newCats: WatchlistCategory[] = data.categories
-        .filter((c: { name: string }) => !existingNames.has(c.name.toLowerCase()))
-        .map((c: { name: string; movieIds: string[] }) => ({
-          id: crypto.randomUUID(),
-          name: c.name,
-          movieIds: c.movieIds,
-        }));
+      // Create each suggested category
+      for (const cat of data.categories) {
+        await createCategoryAction(cat.name);
+      }
 
-      await setCategories([...existing, ...newCats]);
       onCategoriesChange();
     } catch {
       setAutoError("Something went wrong. Try again.");
@@ -234,7 +226,7 @@ export default function CategoryManager({
             aria-label="Auto-categorize with AI"
           >
             <Sparkles className="h-4 w-4" />
-            {autoLoading ? "Thinking…" : "Auto"}
+            {autoLoading ? "Thinking..." : "Auto"}
           </Button>
         </div>
         {createError && (

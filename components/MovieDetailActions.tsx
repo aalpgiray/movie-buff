@@ -1,13 +1,22 @@
 "use client";
 
-import { Eye, EyeOff, Bookmark, BookmarkCheck, Check } from "lucide-react";
+import { Eye, EyeOff, Bookmark, BookmarkCheck, Check, LogIn } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { upsertMovie, getList, setList, getCategories } from "@/lib/movie-db";
+import {
+  getMovieStateAction,
+  addToWatchlistAction,
+  removeFromWatchlistAction,
+  toggleSeenAction,
+  getCategoriesAction,
+  isAuthenticatedAction,
+} from "@/app/actions";
 import type { WatchlistCategory } from "@/lib/types";
 import CategoryAssignControl from "@/components/CategoryAssignControl";
 import { MovieRatingForm } from "@/components/MovieRatingForm";
+import Link from "next/link";
 
 interface MovieDetailActionsProps {
   imdbID: string;
@@ -15,11 +24,12 @@ interface MovieDetailActionsProps {
   year: string;
   poster: string;
   type: string;
-  /** OMDB imdbRating string, e.g. "8.5". Stored in IDB when user marks as watched. */
   imdbRating?: string;
 }
 
-export function MovieDetailActions({ imdbID, title, year, poster, type, imdbRating }: MovieDetailActionsProps) {
+export function MovieDetailActions({ imdbID, title, year, poster, type }: MovieDetailActionsProps) {
+  const router = useRouter();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [isSeen, setIsSeen] = useState(false);
   const [isInWatchlist, setIsInWatchlist] = useState(false);
   const [seenFeedback, setSeenFeedback] = useState(false);
@@ -27,18 +37,28 @@ export function MovieDetailActions({ imdbID, title, year, poster, type, imdbRati
   const [categories, setCategories] = useState<WatchlistCategory[]>([]);
 
   useEffect(() => {
-    Promise.all([getList("seenMovies"), getList("watchlistMovies"), getCategories()]).then(
-      ([seen, watchlist, cats]) => {
-        setIsSeen(seen.includes(imdbID));
-        const inWatchlist = watchlist.includes(imdbID);
-        setIsInWatchlist(inWatchlist);
-        if (inWatchlist) setCategories(cats);
+    async function loadState() {
+      const authenticated = await isAuthenticatedAction();
+      setIsAuthenticated(authenticated);
+
+      if (authenticated) {
+        const [movieState, cats] = await Promise.all([
+          getMovieStateAction(imdbID),
+          getCategoriesAction(),
+        ]);
+
+        if (movieState) {
+          setIsInWatchlist(movieState.isInWatchlist);
+          setIsSeen(movieState.isSeen);
+        }
+        setCategories(cats);
       }
-    );
+    }
+    loadState();
   }, [imdbID]);
 
   const refreshCategories = async () => {
-    const cats = await getCategories();
+    const cats = await getCategoriesAction();
     setCategories(cats);
   };
 
@@ -48,87 +68,114 @@ export function MovieDetailActions({ imdbID, title, year, poster, type, imdbRati
   };
 
   const toggleSeen = async () => {
-    const seen = await getList("seenMovies");
-    const adding = !seen.includes(imdbID);
-    const next = adding ? [...seen, imdbID] : seen.filter((id) => id !== imdbID);
-    await setList("seenMovies", next);
-
-    // Persist full movie details + seen state + rating into the movies store.
-    const ratingNum = imdbRating ? parseFloat(imdbRating) : undefined;
-    await upsertMovie({
-      imdbID,
-      Title: title,
-      Year: year,
-      Poster: poster,
-      Type: type,
-      isSeen: adding,
-      ...(adding && ratingNum !== undefined && !isNaN(ratingNum) ? { rating: ratingNum } : {}),
-    });
-
-    setIsSeen(adding);
-    flash(setSeenFeedback);
-    window.dispatchEvent(new Event("listsUpdated"));
+    const newSeen = !isSeen;
+    const result = await toggleSeenAction(imdbID, newSeen);
+    if (result.success) {
+      setIsSeen(newSeen);
+      flash(setSeenFeedback);
+      router.refresh();
+    }
   };
 
   const toggleWatchlist = async () => {
-    const watchlist = await getList("watchlistMovies");
-    const adding = !watchlist.includes(imdbID);
-    const next = adding ? [...watchlist, imdbID] : watchlist.filter((id) => id !== imdbID);
-    await setList("watchlistMovies", next);
-
-    // Persist full movie details into the movies store so watchlist page can display them.
-    await upsertMovie({ imdbID, Title: title, Year: year, Poster: poster, Type: type });
-
-    setIsInWatchlist(adding);
-    flash(setWatchlistFeedback);
-    if (adding) {
-      const cats = await getCategories();
-      setCategories(cats);
+    if (isInWatchlist) {
+      const result = await removeFromWatchlistAction(imdbID);
+      if (result.success) {
+        setIsInWatchlist(false);
+        setCategories([]);
+        flash(setWatchlistFeedback);
+        router.refresh();
+      }
     } else {
-      setCategories([]);
+      const result = await addToWatchlistAction({
+        imdbID,
+        Title: title,
+        Year: year,
+        Poster: poster,
+        Type: type,
+      });
+      if (result.success) {
+        setIsInWatchlist(true);
+        const cats = await getCategoriesAction();
+        setCategories(cats);
+        flash(setWatchlistFeedback);
+        router.refresh();
+      }
     }
-    window.dispatchEvent(new Event("listsUpdated"));
   };
+
+  // Show loading state
+  if (isAuthenticated === null) {
+    return (
+      <div className="flex gap-3 mt-4">
+        <Button variant="secondary" disabled>
+          Loading...
+        </Button>
+      </div>
+    );
+  }
+
+  // Show sign-in prompt for unauthenticated users
+  if (!isAuthenticated) {
+    return (
+      <div className="flex flex-col gap-3 mt-4">
+        <Link href="/auth/login">
+          <Button variant="secondary">
+            <LogIn className="h-4 w-4" />
+            Sign in to save movies
+          </Button>
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-3 mt-4">
       <div className="flex gap-3">
-      <Button
-        onClick={toggleWatchlist}
-        variant={isInWatchlist ? "default" : "secondary"}
-        className={cn(
-          isInWatchlist && "bg-accent text-accent-foreground hover:bg-accent/90"
-        )}
-        title={isInWatchlist ? "Remove from watchlist" : "Add to watchlist"}
-      >
-        {watchlistFeedback
-          ? <Check className="h-4 w-4" />
-          : isInWatchlist
-            ? <BookmarkCheck className="h-4 w-4" />
-            : <Bookmark className="h-4 w-4" />
-        }
-        {watchlistFeedback
-          ? (isInWatchlist ? "Added!" : "Removed!")
-          : (isInWatchlist ? "In Watchlist" : "Add to Watchlist")
-        }
-      </Button>
+        <Button
+          onClick={toggleWatchlist}
+          variant={isInWatchlist ? "default" : "secondary"}
+          className={cn(
+            isInWatchlist && "bg-accent text-accent-foreground hover:bg-accent/90"
+          )}
+          title={isInWatchlist ? "Remove from watchlist" : "Add to watchlist"}
+        >
+          {watchlistFeedback ? (
+            <Check className="h-4 w-4" />
+          ) : isInWatchlist ? (
+            <BookmarkCheck className="h-4 w-4" />
+          ) : (
+            <Bookmark className="h-4 w-4" />
+          )}
+          {watchlistFeedback
+            ? isInWatchlist
+              ? "Added!"
+              : "Removed!"
+            : isInWatchlist
+              ? "In Watchlist"
+              : "Add to Watchlist"}
+        </Button>
 
-      <Button
-        onClick={toggleSeen}
-        variant={isSeen ? "default" : "secondary"}
-        title={isSeen ? "Mark as unwatched" : "Mark as watched"}
-      >
-        {seenFeedback
-          ? <Check className="h-4 w-4" />
-          : isSeen
-            ? <EyeOff className="h-4 w-4" />
-            : <Eye className="h-4 w-4" />
-        }
-        {seenFeedback
-          ? (isSeen ? "Marked!" : "Removed!")
-          : (isSeen ? "Watched" : "Mark as Watched")
-        }
-      </Button>
+        <Button
+          onClick={toggleSeen}
+          variant={isSeen ? "default" : "secondary"}
+          title={isSeen ? "Mark as unwatched" : "Mark as watched"}
+        >
+          {seenFeedback ? (
+            <Check className="h-4 w-4" />
+          ) : isSeen ? (
+            <EyeOff className="h-4 w-4" />
+          ) : (
+            <Eye className="h-4 w-4" />
+          )}
+          {seenFeedback
+            ? isSeen
+              ? "Marked!"
+              : "Removed!"
+            : isSeen
+              ? "Watched"
+              : "Mark as Watched"}
+        </Button>
       </div>
       {isInWatchlist && (
         <CategoryAssignControl
