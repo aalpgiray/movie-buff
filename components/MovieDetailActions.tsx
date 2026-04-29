@@ -137,6 +137,7 @@ export function MovieDetailActions({ imdbID, title, year, poster, type, imdbRati
           onAssignmentChange={refreshCategories}
         />
       )}
+      {console.log("[v0] isSeen state:", isSeen, "for movie:", imdbID)}
       {isSeen && <MovieRatingForm imdbID={imdbID} />}
     </div>
   );
