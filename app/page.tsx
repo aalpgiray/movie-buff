@@ -77,24 +77,35 @@ export default function Home() {
       if (!user) return;
 
       const isCurrentlySeen = seenMovieIds.has(id);
-      const newSet = new Set(seenMovieIds);
 
-      if (isCurrentlySeen) {
-        newSet.delete(id);
-      } else {
-        newSet.add(id);
-        // If marking as seen and not in watchlist, add to watchlist first
-        if (!watchlistIds.has(id)) {
-          const movie = movies.find((m) => m.imdbID === id);
-          if (movie) {
-            await addToWatchlistAction(movie);
-            setWatchlistIds((prev) => new Set([...prev, id]));
+      try {
+        const result = await toggleSeenAction(id, !isCurrentlySeen);
+        if (!result.success) {
+          console.error("Error toggling seen:", result.error);
+          return;
+        }
+
+        const newSet = new Set(seenMovieIds);
+        if (isCurrentlySeen) {
+          newSet.delete(id);
+        } else {
+          newSet.add(id);
+          // If marking as seen and not in watchlist, add to watchlist first
+          if (!watchlistIds.has(id)) {
+            const movie = movies.find((m) => m.imdbID === id);
+            if (movie) {
+              const addResult = await addToWatchlistAction(movie);
+              if (addResult.success) {
+                setWatchlistIds((prev) => new Set([...prev, id]));
+              }
+            }
           }
         }
-      }
 
-      setSeenMovieIds(newSet);
-      await toggleSeenAction(id, !isCurrentlySeen);
+        setSeenMovieIds(newSet);
+      } catch (error) {
+        console.error("Error in toggleSeen:", error);
+      }
     },
     [user, seenMovieIds, watchlistIds, movies]
   );
@@ -104,20 +115,32 @@ export default function Home() {
       if (!user) return;
 
       const isCurrentlyInWatchlist = watchlistIds.has(id);
-      const newSet = new Set(watchlistIds);
 
-      if (isCurrentlyInWatchlist) {
-        newSet.delete(id);
-        await removeFromWatchlistAction(id);
-      } else {
-        newSet.add(id);
-        const movie = movies.find((m) => m.imdbID === id);
-        if (movie) {
-          await addToWatchlistAction(movie);
+      try {
+        let result;
+        if (isCurrentlyInWatchlist) {
+          result = await removeFromWatchlistAction(id);
+        } else {
+          const movie = movies.find((m) => m.imdbID === id);
+          if (!movie) return;
+          result = await addToWatchlistAction(movie);
         }
-      }
 
-      setWatchlistIds(newSet);
+        if (!result.success) {
+          console.error("Error toggling watchlist:", result.error);
+          return;
+        }
+
+        const newSet = new Set(watchlistIds);
+        if (isCurrentlyInWatchlist) {
+          newSet.delete(id);
+        } else {
+          newSet.add(id);
+        }
+        setWatchlistIds(newSet);
+      } catch (error) {
+        console.error("Error in toggleWatchlist:", error);
+      }
     },
     [user, watchlistIds, movies]
   );
