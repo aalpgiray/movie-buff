@@ -23,8 +23,13 @@ export default function SignUpSuccessPage() {
               Check your email
             </h1>
             <p className="text-sm text-muted-foreground mb-4">
-              We&apos;ve sent you a confirmation link. Please check your email to
-              verify your account before signing in.
+              We&apos;ve sent you a confirmation link. Click the link in your email
+              to verify your account. After clicking, you&apos;ll be redirected back
+              to the app automatically.
+            </p>
+            <p className="text-xs text-muted-foreground/70 mb-4">
+              Note: If you&apos;re using the v0 preview, email confirmation links
+              should work automatically through the redirect proxy.
             </p>
             <Link
               href="/auth/login"

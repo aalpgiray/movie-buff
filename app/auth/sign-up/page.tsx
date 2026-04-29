@@ -33,7 +33,7 @@ export default function SignUpPage() {
     }
 
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -43,7 +43,15 @@ export default function SignUpPage() {
         },
       });
       if (error) throw error;
-      router.push("/auth/sign-up-success");
+      
+      // If email confirmation is disabled, user is logged in immediately
+      if (data.session) {
+        router.push("/watchlist");
+        router.refresh();
+      } else {
+        // Email confirmation required
+        router.push("/auth/sign-up-success");
+      }
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred");
     } finally {
