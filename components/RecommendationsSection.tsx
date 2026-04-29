@@ -32,9 +32,11 @@ export function RecommendationsSection({
 
     try {
       const ratedMovies: RatedMovie[] = await getRatedMovies();
+      console.log("[v0] Rated movies count:", ratedMovies.length, "Movies:", ratedMovies);
       setRatedCount(ratedMovies.length);
 
       if (ratedMovies.length < 3) {
+        console.log("[v0] Not enough ratings, need 3, have:", ratedMovies.length);
         setHasEnoughRatings(false);
         setLoading(false);
         return;
