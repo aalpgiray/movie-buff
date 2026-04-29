@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getPersonalizedRecommendations } from "@/lib/ai";
+import { getSimilarMoviesFromTMDB } from "@/lib/tmdb";
 import { searchMovies } from "@/lib/omdb";
 import type { RatedMovie, Movie } from "@/lib/types";
 
@@ -17,27 +17,60 @@ export async function POST(request: Request) {
       );
     }
 
-    // Get AI recommendations
-    const aiRecommendations = await getPersonalizedRecommendations(ratedMovies);
-
-    if (aiRecommendations.length === 0) {
-      return NextResponse.json({ movies: [] });
-    }
-
-    // Build exclusion set: rated + dismissed + already in watchlist (non-recommendations)
+    // Build exclusion set: rated + dismissed + already in watchlist
     const excludeIds = new Set([
       ...ratedMovies.map((m) => m.imdbID),
       ...dismissedIds,
       ...watchlistIds,
     ]);
 
-    // Search OMDB for each recommended movie
-    const moviePromises = aiRecommendations.map(async (rec) => {
+    // Get top-rated movies (8+) to base recommendations on
+    const topRated = ratedMovies
+      .filter((m) => m.rating >= 8)
+      .sort((a, b) => b.rating - a.rating)
+      .slice(0, 5);
+
+    // If no highly-rated movies, use top 3 by rating
+    const seedMovies = topRated.length > 0 
+      ? topRated 
+      : ratedMovies.sort((a, b) => b.rating - a.rating).slice(0, 3);
+
+    // Fetch similar movies from TMDB for each seed movie
+    const similarPromises = seedMovies.map(async (seed) => {
+      const similar = await getSimilarMoviesFromTMDB(seed.imdbID);
+      return similar.map((s) => ({
+        ...s,
+        reason: `Similar to "${seed.Title}" which you rated ${seed.rating}/10`,
+        seedRating: seed.rating,
+      }));
+    });
+
+    const allSimilar = (await Promise.all(similarPromises)).flat();
+
+    // Filter out excluded movies
+    const filtered = allSimilar.filter((m) => !excludeIds.has(m.imdbId));
+
+    // Remove duplicates, keeping the one from the highest-rated seed
+    const uniqueMap = new Map<string, typeof filtered[0]>();
+    for (const movie of filtered) {
+      const existing = uniqueMap.get(movie.imdbId);
+      if (!existing || movie.seedRating > existing.seedRating) {
+        uniqueMap.set(movie.imdbId, movie);
+      }
+    }
+    const unique = Array.from(uniqueMap.values());
+
+    // Shuffle to add variety
+    const shuffled = unique.sort(() => Math.random() - 0.5);
+
+    // Convert to Movie format by fetching from OMDB
+    const moviePromises = shuffled.slice(0, 15).map(async (rec) => {
+      // Try searching by IMDB ID first for exact match
       const searchResult = await searchMovies(rec.title);
       if (searchResult.Search && searchResult.Search.length > 0) {
-        // Find the best match (exact title match or first result)
+        // Find exact match by imdbId or title
         const exactMatch = searchResult.Search.find(
-          (m) => m.Title.toLowerCase() === rec.title.toLowerCase()
+          (m) => m.imdbID === rec.imdbId || m.Title.toLowerCase() === rec.title.toLowerCase()
         );
         const movie = exactMatch || searchResult.Search[0];
         return {
@@ -52,11 +85,11 @@ export async function POST(request: Request) {
     const results = await Promise.all(moviePromises);
     const movies = results.filter((m): m is Movie => m !== null);
 
-    // Filter out excluded movies
-    const filteredMovies = movies.filter((m) => !excludeIds.has(m.imdbID));
+    // Final filter to ensure no excluded movies slipped through
+    const finalMovies = movies.filter((m) => !excludeIds.has(m.imdbID));
 
-    // Remove duplicates by imdbID
-    const uniqueMovies = filteredMovies.filter(
+    // Remove any final duplicates
+    const uniqueMovies = finalMovies.filter(
       (movie, index, self) =>
         index === self.findIndex((m) => m.imdbID === movie.imdbID)
     );

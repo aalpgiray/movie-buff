@@ -59,6 +59,71 @@ export async function getTMDbPoster(imdbId: string): Promise<string | null> {
   }
 }
 
+/**
+ * Get similar movies from TMDB based on an IMDB ID.
+ * Returns movies similar to the given movie.
+ */
+export async function getSimilarMoviesFromTMDB(imdbId: string): Promise<{ imdbId: string; title: string; year: string; poster: string | null }[]> {
+  if (!TMDB_READ_ACCESS_TOKEN) {
+    console.warn("TMDB_READ_ACCESS_TOKEN is not set.");
+    return [];
+  }
+
+  try {
+    // First, find the TMDB ID from IMDB ID
+    const findRes = await fetch(
+      `${BASE_URL}/find/${imdbId}?external_source=imdb_id`,
+      { headers: bearerHeaders(), ...CACHE_OPTS },
+    );
+    if (!findRes.ok) return [];
+    
+    const findData = await findRes.json();
+    const movieResults = findData.movie_results || [];
+    if (movieResults.length === 0) return [];
+
+    const tmdbId = movieResults[0].id;
+
+    // Get similar movies
+    const similarRes = await fetch(
+      `${BASE_URL}/movie/${tmdbId}/similar`,
+      { headers: bearerHeaders(), ...CACHE_OPTS },
+    );
+    if (!similarRes.ok) return [];
+
+    const similarData = await similarRes.json();
+    const results = similarData.results || [];
+
+    // For each similar movie, we need to get its IMDB ID
+    const moviesWithIds = await Promise.all(
+      results.slice(0, 8).map(async (movie: { id: number; title: string; release_date?: string; poster_path?: string }) => {
+        try {
+          const detailsRes = await fetch(
+            `${BASE_URL}/movie/${movie.id}/external_ids`,
+            { headers: bearerHeaders(), ...CACHE_OPTS },
+          );
+          if (!detailsRes.ok) return null;
+          const details = await detailsRes.json();
+          if (!details.imdb_id) return null;
+          
+          return {
+            imdbId: details.imdb_id,
+            title: movie.title,
+            year: movie.release_date?.slice(0, 4) || "",
+            poster: movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : null,
+          };
+        } catch {
+          return null;
+        }
+      })
+    );
+
+    return moviesWithIds.filter((m): m is NonNullable<typeof m> => m !== null);
+  } catch (error) {
+    console.error("Error fetching similar movies from TMDB:", error);
+    return [];
+  }
+}
+
 export async function getMovieTrailers(imdbId: string): Promise<TMDbVideo[]> {
   if (!TMDB_READ_ACCESS_TOKEN) {
     console.warn("TMDB_READ_ACCESS_TOKEN is not set.");
