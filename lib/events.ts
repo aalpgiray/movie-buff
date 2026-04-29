@@ -1,6 +1,5 @@
-"use client";
-
 // Simple event system for cross-component communication
+// This module is only used by client components
 type EventCallback = () => void;
 
 const listeners: Set<EventCallback> = new Set();
