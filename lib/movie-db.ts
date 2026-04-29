@@ -13,7 +13,7 @@
  * are preserved when new search results arrive for the same imdbID.
  */
 
-import type { Movie, WatchlistCategory } from "@/lib/types";
+import type { Movie, RatedMovie, WatchlistCategory } from "@/lib/types";
 
 const DB_NAME = "movie-buff";
 const DB_VERSION = 2;
@@ -105,6 +105,7 @@ export async function upsertMovies(movies: Movie[]): Promise<void> {
         // Preserve user-owned fields from any existing record.
         isSeen: existing?.isSeen ?? movie.isSeen,
         rating: existing?.rating ?? movie.rating,
+        comment: existing?.comment ?? movie.comment,
       };
       store.put(merged);
     });
@@ -161,6 +162,26 @@ export async function getAllMovies(): Promise<Movie[]> {
 
   db.close();
   return movies;
+}
+
+/**
+ * Get all movies that have been rated by the user (rating > 0).
+ * Returns RatedMovie objects sorted by rating descending, limited to 20 most recent.
+ */
+export async function getRatedMovies(): Promise<RatedMovie[]> {
+  const allMovies = await getAllMovies();
+  
+  return allMovies
+    .filter((m): m is Movie & { rating: number } => typeof m.rating === "number" && m.rating > 0)
+    .sort((a, b) => b.rating - a.rating)
+    .slice(0, 20)
+    .map((m) => ({
+      imdbID: m.imdbID,
+      Title: m.Title,
+      Year: m.Year,
+      rating: m.rating,
+      comment: m.comment,
+    }));
 }
 
 /**

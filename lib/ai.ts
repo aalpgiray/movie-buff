@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import type { RatedMovie } from "@/lib/types";
 
 const apiKey = process.env.GEMINI_API_KEY;
 const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
@@ -214,6 +215,67 @@ Plot: ${plot}`;
 		return [];
 	} catch (error) {
 		console.error("Error generating similar movies:", error);
+		return [];
+	}
+}
+
+/**
+ * Generate personalized movie recommendations based on user's ratings and comments.
+ * Analyzes what the user liked (high ratings) and their comments to suggest similar movies.
+ */
+export async function getPersonalizedRecommendations(
+	ratedMovies: RatedMovie[],
+): Promise<{ title: string; reason: string }[]> {
+	if (!model) {
+		console.warn("GEMINI_API_KEY is not set.");
+		return [];
+	}
+
+	if (ratedMovies.length === 0) {
+		return [];
+	}
+
+	// Build a detailed summary of the user's taste
+	const movieSummaries = ratedMovies
+		.map((m) => {
+			let summary = `- "${m.Title}" (${m.Year}): ${m.rating}/10`;
+			if (m.comment) {
+				summary += ` - User notes: "${m.comment}"`;
+			}
+			return summary;
+		})
+		.join("\n");
+
+	const seenTitles = ratedMovies.map((m) => m.Title);
+
+	const prompt = `You are a movie expert providing personalized recommendations.
+
+Analyze the user's movie ratings and comments below to understand their taste:
+${movieSummaries}
+
+Based on their preferences (especially movies rated 7+), recommend 12 specific, well-known movies they would likely enjoy. Consider:
+- Genres they seem to prefer
+- Themes and styles they respond to
+- Any specific preferences mentioned in their comments
+- Directors or actors from movies they rated highly
+
+Do NOT recommend any movies they have already rated: ${seenTitles.join(", ")}
+
+Return ONLY a JSON object with this exact structure:
+{"movies": [{"title": "Exact Movie Title", "reason": "Personalized reason under 15 words explaining why they'd like it"}, ...]}`;
+
+	try {
+		const text = await generateWithRetry(prompt);
+		const movies = parseMoviesJson(text);
+
+		if (movies && movies.length > 0) {
+			return movies;
+		}
+
+		console.warn("Could not parse Gemini personalized recommendations:", text.slice(0, 300));
+		return [];
+	} catch (error) {
+		console.error("Error generating personalized recommendations:", error);
 		return [];
 	}
 }

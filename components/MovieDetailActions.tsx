@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { upsertMovie, getList, setList, getCategories } from "@/lib/movie-db";
 import type { WatchlistCategory } from "@/lib/types";
 import CategoryAssignControl from "@/components/CategoryAssignControl";
+import { MovieRatingForm } from "@/components/MovieRatingForm";
 
 interface MovieDetailActionsProps {
   imdbID: string;
@@ -136,6 +137,7 @@ export function MovieDetailActions({ imdbID, title, year, poster, type, imdbRati
           onAssignmentChange={refreshCategories}
         />
       )}
+      {isSeen && <MovieRatingForm imdbID={imdbID} />}
     </div>
   );
 }

@@ -6,7 +6,16 @@ export interface Movie {
   Poster: string;
   reason?: string;
   rating?: number;
+  comment?: string;
   isSeen?: boolean;
+}
+
+export interface RatedMovie {
+  imdbID: string;
+  Title: string;
+  Year: string;
+  rating: number;
+  comment?: string;
 }
 
 export interface MovieDetails extends Movie {
